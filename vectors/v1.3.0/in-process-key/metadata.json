@@ -1,0 +1,13 @@
+{
+  "variant": "in-process-key",
+  "description": "In-process signing key. The Ed25519 private key is derived deterministically from a public seed and lives inside the agent process. This is the simpler deployment model but has a weaker trust boundary: if the agent process is compromised, the key can be extracted and receipts forged. The deterministic seed makes these vectors byte-reproducible.",
+  "signing_algorithm": "Ed25519",
+  "public_key": "6PPlM1taN/Ws4SnxaypgY2CGcKvGPw/eC54cUNesSb8=",
+  "public_key_fingerprint": "bbca301d8848dfdb",
+  "private_key_seed": "SHA-256(b'ccs-verifier/in-process-test/v1')",
+  "private_key_included": true,
+  "issuer": "ccs-verifier/in-process-test",
+  "deployment_mode": "in-process",
+  "chain_integrity_verdict": "INTACT",
+  "key_isolation": "private_key_inside_process"
+}

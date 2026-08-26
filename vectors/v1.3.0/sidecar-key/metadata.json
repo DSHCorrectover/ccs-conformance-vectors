@@ -1,0 +1,12 @@
+{
+  "variant": "sidecar-key",
+  "description": "External sidecar signing key. The Ed25519 private key resides outside the agent process (e.g., in a separate enclave/sidecar). Only the public key is published; the private key is intentionally not included in this repository. This is the stronger trust model: compromise of the agent process does not enable receipt forgery.",
+  "signing_algorithm": "Ed25519",
+  "public_key": "6TQsqQ6W+O18PICGQDrGVCCGMqvlA61g5AyY0oHCtXc=",
+  "public_key_fingerprint": "a04bea421da036ca",
+  "private_key_included": false,
+  "issuer": "ccs-verifier/sidecar-test",
+  "deployment_mode": "sidecar",
+  "chain_integrity_verdict": "INTACT",
+  "key_isolation": "private_key_outside_process"
+}
