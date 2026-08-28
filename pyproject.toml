@@ -32,5 +32,5 @@ ccs-conformance-check = "ccs_conformance_checker:main"
 [tool.setuptools]
 py-modules = ["ccs_conformance_checker"]
 
-[tool.setuptools.package-data]
-"*" = ["checkers/*.py", "checkers/LICENSE", "vectors/**/*"]
+[tool.setuptools.packages]
+find = {include = ["checkers*"]}
