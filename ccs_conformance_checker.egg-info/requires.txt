@@ -1,2 +1,0 @@
-cryptography>=41.0
-jcs>=0.2.0

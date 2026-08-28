@@ -1,2 +1,0 @@
-[console_scripts]
-ccs-conformance-check = ccs_conformance_checker:main
