@@ -11,16 +11,24 @@ import runpy
 import sys
 
 
-def main() -> None:
+def _find_checker() -> str:
+    """Locate independent_checker.py relative to this module or sys.prefix."""
     here = os.path.dirname(os.path.abspath(__file__))
-    checker = os.path.join(here, "checkers", "independent_checker.py")
-    if not os.path.exists(checker):
-        # When installed as a console script, checkers/ may live beside the
-        # installed module file.
-        checker = os.path.join(os.path.dirname(sys.executable), "checkers", "independent_checker.py")
-    if not os.path.exists(checker):
-        print(f"error: cannot find independent_checker.py (looked in {here})", file=sys.stderr)
-        sys.exit(2)
+    candidates = [
+        os.path.join(here, "checkers", "independent_checker.py"),
+        os.path.join(sys.prefix, "checkers", "independent_checker.py"),
+        os.path.join(os.path.dirname(sys.executable), "checkers", "independent_checker.py"),
+    ]
+    for c in candidates:
+        if os.path.isfile(c):
+            return c
+    searched = "\n  ".join(candidates)
+    print(f"error: cannot find independent_checker.py, searched:\n  {searched}", file=sys.stderr)
+    sys.exit(2)
+
+
+def main() -> None:
+    checker = _find_checker()
     sys.argv[0] = checker
     runpy.run_path(checker, run_name="__main__")
 
