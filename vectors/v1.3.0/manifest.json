@@ -1,7 +1,13 @@
 {
   "spec_version": "1.3.0",
+  "manifest_version": "1.3.1",
   "trace_id": "paired-vector-001",
-  "description": "Paired conformance vectors: same two-action session (benign ls, malicious curl|bash) signed by two different key deployment models. Variant A uses an external sidecar key (private key not published); Variant B uses a deterministic in-process key. Each variant records two independent verdicts: chain integrity (cryptographic) and behavior evidence (semantic).",
+  "description": "Paired conformance vectors: same two-action session signed by two key deployment models. v1.3.1 fixes behavior evidence signing by adding linked signed observation receipts; L1 receipts remain exactly 30 fields and ccs-verifier 1.3.0 compatible.",
+  "changelog": [
+    "v1.3.1: added signed ccs.behavior_evidence.v1 receipts linked to each L1 receipt; behavior verdict is no longer unsigned manifest prose",
+    "v1.3.1: replaced incorrect manifest_sha256 self-reference with manifest_digest over JCS canonical content excluding manifest_digest itself",
+    "v1.3.1: rotated sidecar public key because the new observation receipt requires private-key signing and the original sidecar private key was intentionally not retained"
+  ],
   "common_input": {
     "action_1": {
       "tool": "shell",
@@ -22,7 +28,7 @@
   },
   "independent_verdicts": {
     "chain_integrity": {
-      "description": "Cryptographic verdict: does the Ed25519 signature over the JCS-canonicalized receipt verify against the published public key?",
+      "description": "Cryptographic: Ed25519 over JCS canonical L1 receipt verifies against the published public key.",
       "values": [
         "INTACT",
         "TAMPERED",
@@ -32,7 +38,7 @@
       "in_process_key": "INTACT"
     },
     "behavior_evidence": {
-      "description": "Semantic verdict: did the verifier observe and act on malicious behavior? This verdict is attested by the signed receipt but cannot be independently verified by a third party without re-running the verifier.",
+      "description": "Semantic observation: signed in linked ccs.behavior_evidence.v1 receipt, not in unsigned manifest prose.",
       "values": [
         "not_observed",
         "observed_and_rejected",
@@ -44,44 +50,63 @@
   },
   "key_deployment_comparison": {
     "sidecar_key": {
-      "private_key_location": "outside agent process (enclave/sidecar)",
+      "private_key_location": "outside agent process",
       "private_key_published": false,
-      "forgeability_on_process_compromise": "no",
+      "forgeable_on_compromise": "no",
       "reproducible": false
     },
     "in_process_key": {
       "private_key_location": "inside agent process",
       "private_key_published": true,
-      "forgeability_on_process_compromise": "yes",
+      "forgeable_on_compromise": "yes",
       "reproducible": true
     }
   },
-  "pdr_crosswalk_notes": "These vectors complement Providex-AI/rootsign PDR receipts (Zenodo DOI 10.5281/zenodo.19984948). CCS receipts provide the cryptographic chain-integrity layer; PDR evidence-lineage provides the behavioral provenance layer. A future crosswalk document will map CCS receipt fields to PDR evidence-lineage fields.",
   "files": [
     {
       "path": "in-process-key/action-1-allow.json",
-      "sha256": "3471cb6af14f8bfa0d22a48e0810ac3b0b9b9bcdb4c78c7c5592f33fedeb835b"
+      "sha256": "13ca960f631b8be3656b73e2c4b44e60d6cb9e8c0c3f5014835a19be8ef91483"
     },
     {
       "path": "in-process-key/action-2-block.json",
-      "sha256": "b8a674e18be1f0cf3efb6fc3c02458ae147ec8b1c5e4e590b77d1d79068c9aec"
+      "sha256": "1410e30b163ca7468adb09d07a2686fc8fe08c9aab040d680bef9f16cf68bed9"
+    },
+    {
+      "path": "in-process-key/behavior-1-allow.json",
+      "sha256": "a6c2133fafeaa43e37168fa955929592bb16bbf13194277c7790cac382a64d80"
+    },
+    {
+      "path": "in-process-key/behavior-2-block.json",
+      "sha256": "76b7b1043196a40ae7d09ca3716c42f41b74c1d61c09a1ad4c4c6c66ac9c1f00"
     },
     {
       "path": "in-process-key/metadata.json",
-      "sha256": "d8130de9968408ad38417d618c6fd620af57037eafefbc6483cc1a6355632114"
+      "sha256": "d9834ae063c47dfdbfe34060f9d67e3b296086a6dbecb65766f4fc3a4f2af583"
     },
     {
       "path": "sidecar-key/action-1-allow.json",
-      "sha256": "0c7f872edf4efcdd4d61f0855862cc6a85ff4135642eaeb3a7ac0648034defe7"
+      "sha256": "947220246a00d2e16d128892a359f8f6b31832d9657a7ab4e7bfdd9802cafe6c"
     },
     {
       "path": "sidecar-key/action-2-block.json",
-      "sha256": "282f9d12582f9da8242a4c70272fc7a59740381faf179c889fad26939d8efa67"
+      "sha256": "481fb913eb3bc36c3e8cf43a9abf1a03de3e54777f3c81eccf1910022ae9bf28"
+    },
+    {
+      "path": "sidecar-key/behavior-1-allow.json",
+      "sha256": "3b935048ff948f66024c861f0c4ecf0a0a82f22cba99090950f43db71aeaa4b5"
+    },
+    {
+      "path": "sidecar-key/behavior-2-block.json",
+      "sha256": "87b8d59a1d7b29f35175c6cd1d9139323e77dd667da13d20903e70d2df9982d8"
     },
     {
       "path": "sidecar-key/metadata.json",
-      "sha256": "a07d7670c1f3da6e9825b326af8b8179cd82dc2903503c42089f982b5e2aad1d"
+      "sha256": "0efb30badb3e65bc70d83f2dd90d0906d6beac2bac1778ef420d9c4a029e7e45"
     }
   ],
-  "manifest_sha256": "6cf041f0c55b95d6bbd87724655fa7618fe906e052401072aeac51a4f6b6d35c"
+  "manifest_digest": {
+    "algorithm": "SHA-256",
+    "value": "42126c2436720213064c20cbfe022c81a941d793129cf6bd918575f9ac735d52",
+    "canonicalization": "JCS (RFC 8785): sorted keys, compact JSON. Digest covers the manifest excluding manifest_digest itself."
+  }
 }

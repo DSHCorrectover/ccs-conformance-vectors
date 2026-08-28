@@ -1,12 +1,13 @@
 {
   "variant": "sidecar-key",
-  "description": "External sidecar signing key. The Ed25519 private key resides outside the agent process (e.g., in a separate enclave/sidecar). Only the public key is published; the private key is intentionally not included in this repository. This is the stronger trust model: compromise of the agent process does not enable receipt forgery.",
+  "description": "External sidecar signing key. The Ed25519 private key resides outside the agent process. Only the public key is published. Process compromise does not enable receipt forgery.",
   "signing_algorithm": "Ed25519",
-  "public_key": "6TQsqQ6W+O18PICGQDrGVCCGMqvlA61g5AyY0oHCtXc=",
-  "public_key_fingerprint": "a04bea421da036ca",
+  "public_key": "OzTBuWfAfc8O/Mp1g45oaXAiXmagGxDutK6hnXV/pYk=",
+  "public_key_fingerprint": "744eb751364379bf",
   "private_key_included": false,
   "issuer": "ccs-verifier/sidecar-test",
   "deployment_mode": "sidecar",
   "chain_integrity_verdict": "INTACT",
+  "behavior_evidence_model": "Each action has two signed artifacts: the 30-field CCS L1 receipt (authorization/chain integrity) and a linked ccs.behavior_evidence.v1 receipt (semantic observation). Both are signed and linked by linked_l1_receipt_digest.",
   "key_isolation": "private_key_outside_process"
 }

@@ -1,0 +1,22 @@
+{
+  "receipt_type": "ccs.behavior_evidence.v1",
+  "trace_id": "paired-vector-001",
+  "tool_call_id": "call_paired-vector-001_0",
+  "sequence": 0,
+  "linked_l1_receipt_digest": "sha256:53c2be53d881767097ddf88f8631c2987eb114e5675a2f1324315e94e70324a3",
+  "behavior_evidence_verdict": "not_observed",
+  "evidence_ref": {
+    "type": "rule_scan_complete",
+    "rule_id": "no_rule_matched",
+    "verifier": "ccs-verifier",
+    "rule_version": "1.3.0"
+  },
+  "issuer": "ccs-verifier/in-process-test",
+  "audience": "paired-vector",
+  "issued_at": 1893456000.0,
+  "deployment_mode": "in-process",
+  "signing_algorithm": "Ed25519",
+  "public_key_fingerprint": "bbca301d8848dfdb",
+  "public_key": "6PPlM1taN/Ws4SnxaypgY2CGcKvGPw/eC54cUNesSb8=",
+  "signature": "hQeqCblDdG4pP9/KvkLYSAVRsWFHBoos31/xPvukNCnvyGpJQhR/Oqs9gAx0KIP9O/QlU6zaqHg9B7NOgDt6Cg=="
+}

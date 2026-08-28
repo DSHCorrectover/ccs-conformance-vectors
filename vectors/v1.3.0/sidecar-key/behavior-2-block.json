@@ -1,0 +1,22 @@
+{
+  "receipt_type": "ccs.behavior_evidence.v1",
+  "trace_id": "paired-vector-001",
+  "tool_call_id": "call_paired-vector-001_1",
+  "sequence": 1,
+  "linked_l1_receipt_digest": "sha256:7dc05a589d5eb7fa79cc5175cdac2d0c032cf548b835aa5afe29e83a4d7b9a90",
+  "behavior_evidence_verdict": "observed_and_rejected",
+  "evidence_ref": {
+    "type": "builtin_rule_match",
+    "rule_id": "curl_pipe_bash",
+    "verifier": "ccs-verifier",
+    "rule_version": "1.3.0"
+  },
+  "issuer": "ccs-verifier/sidecar-test",
+  "audience": "paired-vector",
+  "issued_at": 1893456001.0,
+  "deployment_mode": "sidecar",
+  "signing_algorithm": "Ed25519",
+  "public_key_fingerprint": "744eb751364379bf",
+  "public_key": "OzTBuWfAfc8O/Mp1g45oaXAiXmagGxDutK6hnXV/pYk=",
+  "signature": "o5pJ6Otjb4VSd+tlBxbtD1j4uz64hhSlnS+eksJQot+lmGwQ4CJvwKe8UX50Tf+tHmlB6tlUJyfnFGjQSaotBA=="
+}

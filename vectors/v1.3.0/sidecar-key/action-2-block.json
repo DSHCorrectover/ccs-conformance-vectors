@@ -23,10 +23,10 @@
   "expires_at": 1893456301.0,
   "max_clock_skew": 0.0,
   "action": "shell.execute",
-  "signature": "cVjbUfvaGOgB3wYtSLuJGeOrH3q7rnR+3tEwKp3T25YI9th6X8sePcuSgezsn5a/VSpVlBgeNio6twbCcDToCg==",
+  "signature": "YoykCnZqkBzNx230PxD0MUngbAEHKK8RvyOLLnnF26UfAEqL2csaU59A8xhHcOK2t8OwVlkRDH7h/KfJnm7nDw==",
   "signing_algorithm": "Ed25519",
-  "public_key_fingerprint": "a04bea421da036ca",
-  "public_key": "6TQsqQ6W+O18PICGQDrGVCCGMqvlA61g5AyY0oHCtXc=",
+  "public_key_fingerprint": "744eb751364379bf",
+  "public_key": "OzTBuWfAfc8O/Mp1g45oaXAiXmagGxDutK6hnXV/pYk=",
   "verified_at": 1893456001.0,
   "latency_us": 28.1
 }
