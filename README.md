@@ -147,6 +147,77 @@ These vectors complement Providex-AI/rootsign PDR receipts ([Zenodo DOI 10.5281/
 - The `signature` field is excluded from the signed payload.
 - The `signing_algorithm`, `public_key`, and `public_key_fingerprint` fields ARE included in the signed payload (preventing algorithm substitution and key substitution attacks).
 
+## v1.4.0 Conformance Vectors
+
+The v1.4.0-conformance release adds **cross-field semantic negative vectors**
+requested by Henri Sirkkavaara (Vaara) on the IETF SCITT mailing list. These
+vectors test validation logic **beyond** signature verification — catching
+implementation bugs where the signer vouches for semantically incorrect data.
+
+### Deterministic Key
+
+All v1.4.0 vectors use a reproducible Ed25519 key pair:
+
+- **Seed**: `SHA-256(b"ccs-conformance-vectors/v1/independent-checker")`
+- **Public key** (base64): `ndAkiPndnKQ7hLAMOQBu4BE79y0BM3NA0diA0YDB2cI=`
+- **Fingerprint** (16 hex): `26a02d86f5d0a10f`
+- **Algorithm**: Ed25519 over JCS (RFC 8785)
+
+### Vector Cases
+
+| Case | Type | Description | Expected |
+|---|---|---|---|
+| `01-allow` | Positive | Normal `lookup_customer` call, verdict=allow, all hashes consistent | `valid` |
+| `02-deny-pre-admission` | Positive | `process_refund` blocked pre-admission, block envelope, verdict=block | `valid` |
+| `03-chain-of-3` | Positive chain | 3 sequential receipts, same trace_id/run_id, sequences 0→1→2 | `valid` |
+| `04-tampered-negative` | Negative | Verdict tampered allow→block without re-signing | `invalid` (signature mismatch) |
+| `05a-timestamp-month13` | Semantic negative | ISO 8601 timestamp with month=13 | `invalid` (impossible instant) |
+| `05b-sandbox-flag` | Semantic negative | `sandbox=true` in runtime but issuer/principal is production | `invalid` (sandbox not bound) |
+| `05c-response-hash` | Semantic negative | `response_hash` does not match the actual response body (valid signature) | `invalid` (hash mismatch) |
+| `05d-verdict-response` | Semantic negative | verdict=block but response is a normal response, not a block envelope | `invalid` (deny carries commitment) |
+
+### Independent Checker
+
+The `checkers/independent_checker.py` verifies all vectors with **zero CCS code
+dependencies** — only the Python standard library, `cryptography`, and `jcs`:
+
+```bash
+pip install cryptography jcs
+python checkers/independent_checker.py vectors/v1.4.0-conformance/
+```
+
+The checker performs:
+
+1. **Manifest verification** — SHA-256 of every file matches `manifest.json`
+2. **Structural validation** — exactly 30 fields, correct types, valid enum values
+3. **Ed25519 signature verification** — JCS canonicalization, key/fingerprint binding
+4. **Timestamp validation** — rejects impossible dates (month=13, etc.)
+5. **Cross-field consistency**:
+   - `response_hash` matches the response body
+   - `args_digest` matches the tool arguments
+   - verdict=block requires a block envelope
+   - deny verdict must not carry a normal response commitment
+   - sandbox flag must be bound to a sandbox principal/issuer
+   - `expires_at >= issued_at`
+   - `public_key_fingerprint` matches the actual public key hash
+6. **Chain validation** — shared trace_id, monotonic sequences, linked run context
+7. **Tamper detection** — any field modification invalidates the signature
+
+### Regenerating Vectors
+
+```bash
+pip install cryptography jcs
+python scripts/generate_vectors.py
+```
+
+The generator uses fixed values for all timestamps, IDs, and nonces, producing
+byte-identical output across runs.
+
+### Licensing
+
+- Vector files: **CC0 1.0** (public domain, same as repository)
+- Independent checker: **MIT License** (`checkers/LICENSE`)
+
 ## Contributing
 
 If you are building an independent CCS implementation and find a discrepancy, please open an issue with your vector and expected result.
