@@ -1,0 +1,27 @@
+name: CCS Conformance
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: pip install cryptography jcs
+      - name: Run independent checker
+        run: python checkers/independent_checker.py vectors/v1.4.0-conformance/
+      - name: Install package
+        run: pip install .
+      - name: Run console entry point
+        run: ccs-conformance-check vectors/v1.4.0-conformance/
