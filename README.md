@@ -165,13 +165,15 @@ All v1.4.0 vectors use a reproducible Ed25519 key pair:
 
 ### Vector Cases
 
+The v1.4.0 bundle contains **8 test cases: 3 valid (positive) + 5 invalid (negative)**. Each case includes a receipt, signature, public key, signing input, and expected verdict.
+
 | Case | Type | Description | Expected |
 |---|---|---|---|
 | `01-allow` | Positive | Normal `lookup_customer` call, verdict=allow, all hashes consistent | `valid` |
 | `02-deny-pre-admission` | Positive | `process_refund` blocked pre-admission, block envelope, verdict=block | `valid` |
 | `03-chain-of-3` | Positive chain | 3 sequential receipts, same trace_id/run_id, sequences 0→1→2 | `valid` |
 | `04-tampered-negative` | Negative | Verdict tampered allow→block without re-signing | `invalid` (signature mismatch) |
-| `05a-timestamp-month13` | Semantic negative | ISO 8601 timestamp with month=13 | `invalid` (impossible instant) |
+| `05a-timestamp-month13` | Semantic negative | ISO-shaped string `2025-13-01T00:00:00Z` (month 13 is not a valid calendar month) | `invalid` (impossible instant) |
 | `05b-sandbox-flag` | Semantic negative | `sandbox=true` in runtime but issuer/principal is production | `invalid` (sandbox not bound) |
 | `05c-response-hash` | Semantic negative | `response_hash` does not match the actual response body (valid signature) | `invalid` (hash mismatch) |
 | `05d-verdict-response` | Semantic negative | verdict=block but response is a normal response, not a block envelope | `invalid` (deny carries commitment) |
@@ -221,3 +223,16 @@ byte-identical output across runs.
 ## Contributing
 
 If you are building an independent CCS implementation and find a discrepancy, please open an issue with your vector and expected result.
+
+
+## License Scope
+
+This repository contains two distinct components with separate licenses:
+
+| Component | Path | License |
+|---|---|---|
+| Conformance vector data (receipts, signatures, keys, manifests) | `vectors/` | **CC0 1.0 Universal** (public domain) |
+| Independent conformance checker | `checkers/` | **MIT License** |
+| Repository root (documentation, build scripts) | `*.md`, `scripts/` | **CC0 1.0 Universal** |
+
+The **ccs-verifier** PyPI reference implementation is a separate codebase licensed under the **Elastic License 2.0 (ELv2)**. The ELv2 does not apply to any file in this repository. This separation allows independent implementations to use the test vectors and checker without ELv2 restrictions, while the production verifier retains its own license terms.
