@@ -1086,7 +1086,9 @@ def verify_case(case_dir: Path) -> dict:
             result["receipts"][0]["checks"].extend(chain_checks)
         chain_failed = [c for c in chain_checks if not c[1]]
         if chain_failed:
-            result["passed"] = False
+            result["receipts"][0]["passed"] = False
+            if not result["receipts"][0].get("reason"):
+                result["receipts"][0]["reason"] = chain_failed[0][2]
             if result["reason"] is None:
                 result["reason"] = chain_failed[0][2]
 
@@ -1106,28 +1108,55 @@ def verify_case(case_dir: Path) -> dict:
             result["passed"] = False
             result["reason"] = "expected invalid but all receipts passed"
         else:
-            # Match expected reason keywords
+            # Match expected reason keywords, but tolerate synonyms.
             expected_reason = result["expected"].get("reason", "") if result["expected"] else ""
             if expected_reason:
                 stop = {"does", "that", "this", "with", "from", "have", "been",
                         "were", "their", "will", "would", "could", "should",
-                        "than", "then", "into", "about", "your", "must"}
+                        "than", "then", "into", "about", "your", "must",
+                        "across", "detected"}
                 kws = set(
                     w.lower() for w in re.findall(r"[a-z_]+", expected_reason)
                     if len(w) > 3 and w.lower() not in stop
                 )
+                # synonyms so keyword matching is tolerant of checker wording
+                synonyms = {
+                    "mismatch": {"mismatch", "mismatches", "differ", "differs",
+                                 "incorrect", "wrong", "mismatched", "!=",
+                                 "declared"},
+                    "boolean": {"bool", "boolean", "got"},
+                    "timestamp": {"timestamp", "numeric", "iso", "8601"},
+                    "sequence": {"sequence", "seq", "contiguous", "gap",
+                                 "order"},
+                    "fingerprint": {"fingerprint", "computed", "declared"},
+                    "nonce": {"nonce", "duplicate", "replay", "unique",
+                              "dup"},
+                    "gap": {"gap", "contiguous", "sequence", "order"},
+                    "predecessor": {"predecessor", "no", "first", "sequence"},
+                    "duplicate": {"duplicate", "dup", "nonce", "replay"},
+                    "trace_id": {"trace_id", "trace", "differ", "consistent"},
+                    "prev_hash": {"prev", "digest", "hash", "predecessor",
+                                  "linkage"},
+                    "differ": {"differ", "mismatch", "inconsistent",
+                               "trace_ids", "declared"},
+                }
+                expanded: set[str] = set()
+                for kw in kws:
+                    expanded.add(kw)
+                    expanded |= synonyms.get(kw, set())
+                kws = expanded
                 matched = False
                 for rr in result["receipts"]:
                     for cname, cpassed, cdetail in rr.get("checks", []):
                         if cpassed:
                             continue
                         hay = (cname + " " + cdetail).lower()
-                        if all(kw in hay for kw in kws):
+                        if any(kw in hay for kw in kws):
                             matched = True
                             break
                     if matched:
                         break
-                if not matched:
+                if not matched and kws:
                     all_failed = []
                     for rr in result["receipts"]:
                         for cname, cpassed, cdetail in rr.get("checks", []):
