@@ -1,36 +1,50 @@
 """Entry-point shim for ccs-conformance-check.
 
-Runs the independent checker at checkers/independent_checker.py via runpy so
-the checker itself remains a single zero-dependency file with no package
-structure required.
+Imports and runs the independent checker via importlib so it works both from
+a source checkout and when installed as a pip package.
 """
 from __future__ import annotations
 
+import importlib.util
 import os
-import runpy
 import sys
 
 
-def _find_checker() -> str:
-    """Locate independent_checker.py relative to this module or sys.prefix."""
+def _load_checker():
+    """Find and load independent_checker.py as a module."""
+    # Try package-relative first (when installed via pip)
+    try:
+        from checkers import independent_checker  # type: ignore
+        return independent_checker
+    except ImportError:
+        pass
+
+    # Try filesystem-relative (when run from source checkout)
     here = os.path.dirname(os.path.abspath(__file__))
-    candidates = [
-        os.path.join(here, "checkers", "independent_checker.py"),
-        os.path.join(sys.prefix, "checkers", "independent_checker.py"),
-        os.path.join(os.path.dirname(sys.executable), "checkers", "independent_checker.py"),
-    ]
-    for c in candidates:
-        if os.path.isfile(c):
-            return c
-    searched = "\n  ".join(candidates)
-    print(f"error: cannot find independent_checker.py, searched:\n  {searched}", file=sys.stderr)
-    sys.exit(2)
+    candidate = os.path.join(here, "checkers", "independent_checker.py")
+    if not os.path.isfile(candidate):
+        candidate = os.path.join(os.getcwd(), "checkers", "independent_checker.py")
+    if not os.path.isfile(candidate):
+        print(
+            f"error: cannot find checkers/independent_checker.py "
+            f"(looked in {here} and cwd)",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    spec = importlib.util.spec_from_file_location(
+        "ccs_independent_checker", candidate
+    )
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)  # type: ignore[union-attr]
+    return mod
 
 
 def main() -> None:
-    checker = _find_checker()
-    sys.argv[0] = checker
-    runpy.run_path(checker, run_name="__main__")
+    mod = _load_checker()
+    # If the module has a main(), call it; otherwise it may run at import time
+    if hasattr(mod, "main"):
+        sys.exit(mod.main())
 
 
 if __name__ == "__main__":
