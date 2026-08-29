@@ -510,6 +510,26 @@ def validate_l1_semantic(
             else f"timestamp skew {skew}s exceeds max_clock_skew {mcs}s",
         ))
 
+    # --- Verification within declared window ---
+    # verified_at must not fall after expires_at + max_clock_skew. This gates
+    # the receipt's internal temporal-claim coherence (issuer stamps): a
+    # verification stamped after the declared window closed is invalid. Only
+    # evaluated when the window was ever open (expires >= issued); if the
+    # window never opened, expires-after-issued already reports it. Wall-clock
+    # freshness against a relying party's own clock is a separate policy
+    # decision outside this conformance checker.
+    if (verified_ep is not None and expires_ep is not None
+            and issued_ep is not None and expires_ep >= issued_ep):
+        over = verified_ep - expires_ep
+        checks.append((
+            "cross-field:verified-within-window",
+            over <= mcs,
+            "ok" if over <= mcs
+            else (f"verified_at is {over}s after expires_at; exceeds "
+                  f"max_clock_skew {mcs}s (window closed before verification "
+                  f"by {over - mcs}s beyond tolerance)"),
+        ))
+
     # --- public_key_fingerprint matches actual public key ---
     try:
         expected_fpr = compute_fingerprint(receipt["public_key"])

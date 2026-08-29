@@ -1,10 +1,4 @@
 {
-  "version": "1.4.0-conformance",
-  "generated_by": "generate_vectors.py + generate_extended_vectors.py",
-  "seed": "ccs-conformance-vectors/v1/independent-checker",
-  "public_key_b64": "ndAkiPndnKQ7hLAMOQBu4BE79y0BM3NA0diA0YDB2cI=",
-  "public_key_fingerprint": "26a02d86f5d0a10f",
-  "signing_algorithm": "Ed25519",
   "canonicalization": "JCS (RFC 8785)",
   "files": {
     "01-allow/README.md": "bc5278cc6745cfdb4cf109d056ec985337d45215923f7ad6a433a0a7a56151c2",
@@ -358,7 +352,15 @@
     "08-temporal-negatives/08d-clock-skew-boundary/signature.sig": "cdaf0faa2d825b57a86d5dc24f790332b74de88859c1221db8e7f257106df522",
     "08-temporal-negatives/08d-clock-skew-boundary/signing-input.jcs": "3db8795cc936c18315a00adddb3c7923de13c0679de56eb637a3907b85613574",
     "08-temporal-negatives/08d-clock-skew-boundary/tool-args.json": "f0d6a29cbb13a3c87c0d9d6b273c848a97a730bd574f0ba7e1f5538e7624b451",
-    "08-temporal-negatives/README.md": "25143c91fcf8ffce7a540412527810f7c7a6447cfb92990ec35cb5d329776a87",
+    "08-temporal-negatives/08e-verified-after-expiry/README.md": "6370f1cacd43785712b6543d409c72a3e4ddea3c7a49601c343c46bcb8b4605d",
+    "08-temporal-negatives/08e-verified-after-expiry/expected.json": "c03047e4488c37bdc6dc3ea2ac2603cce1f361e84b6bb183a476d8ad20c29d41",
+    "08-temporal-negatives/08e-verified-after-expiry/public-key.b64": "d64109d13d11f32488ee8ad83dbfd3c604d1c5a881863f37d84902411d8497cc",
+    "08-temporal-negatives/08e-verified-after-expiry/receipt.json": "6f073de18daf5c5b4f05ba070aacbc3be0e0a4b4978f0b5a2429905950d77ac2",
+    "08-temporal-negatives/08e-verified-after-expiry/response-body.json": "7520b0a4bb4001e9359c29d54b8d2e3dc870e98abc412dd595b35846c1fca30a",
+    "08-temporal-negatives/08e-verified-after-expiry/signature.sig": "64485678069d0e7aedde13698da488c9070a81a3316dbbb851e82123b2def8cd",
+    "08-temporal-negatives/08e-verified-after-expiry/signing-input.jcs": "71fcaa1c646238be51825c66039ec1ca338c7dce399f4017969638613fad3a93",
+    "08-temporal-negatives/08e-verified-after-expiry/tool-args.json": "f0d6a29cbb13a3c87c0d9d6b273c848a97a730bd574f0ba7e1f5538e7624b451",
+    "08-temporal-negatives/README.md": "a7f1fbf627fdc08e56b3f62ad249319b321e177303ca7dcd845ba737c3ead34d",
     "09-identity-negatives/09a-fingerprint-mismatch/README.md": "8890f5fbbfc2246b76434d91fecd1f7409c76fc0ac1289d0a9d3f164cd83869a",
     "09-identity-negatives/09a-fingerprint-mismatch/expected.json": "7321ddd8c6b6187fc213edfce13b1d918023d68358b55ba679d1ffc7d6fa6d40",
     "09-identity-negatives/09a-fingerprint-mismatch/public-key.b64": "d64109d13d11f32488ee8ad83dbfd3c604d1c5a881863f37d84902411d8497cc",
@@ -496,5 +498,11 @@
     "12-nonce-negatives/12b-empty-nonce/signing-input.jcs": "186e88570be35558648eb32c215b6c3e76e85f6a680d1ecfe0e2c800b994a083",
     "12-nonce-negatives/12b-empty-nonce/tool-args.json": "a63355da762ddde4e6f8321f69a0e91c3eaef0639da91d0a9f6f170a1e7e27a5",
     "12-nonce-negatives/README.md": "98d23c02dd2bb8fdac69a2887b5247da096f825af60448ea68c47c78172a604b"
-  }
+  },
+  "generated_by": "generate_vectors.py + generate_extended_vectors.py",
+  "public_key_b64": "ndAkiPndnKQ7hLAMOQBu4BE79y0BM3NA0diA0YDB2cI=",
+  "public_key_fingerprint": "26a02d86f5d0a10f",
+  "seed": "ccs-conformance-vectors/v1/independent-checker",
+  "signing_algorithm": "Ed25519",
+  "version": "1.4.0-conformance"
 }
