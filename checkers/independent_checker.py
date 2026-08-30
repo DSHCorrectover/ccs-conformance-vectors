@@ -12,7 +12,8 @@ Supports:
   - Structure / schema negatives
   - Temporal negatives (expiry, clock skew, issued_at ordering)
   - Identity negatives (fingerprint, algorithm, public key format)
-  - Chain negatives (sequence gaps, prev-hash, trace-id consistency, empty chain)
+  - Chain negatives (sequence gaps, prev-hash anchored to predecessor bytes,
+    trace-id consistency, empty chain)
   - Integrity negatives (request/params/config/response hash mismatches)
   - Nonce uniqueness within a chain / bundle
   - L2 linked L1 digest verification
@@ -1035,37 +1036,57 @@ def validate_chain(case_dir: Path, receipt_results: list[dict]) -> list[tuple[st
             # Without chain spec, we can't tell — but if chain declares expected first, handled above
             pass
 
-    # 5. prev-hash linkage (from runtime context prev_receipt_digest)
-    if chain_spec and "expected_prev_digests" in chain_spec:
-        expected_prevs = chain_spec["expected_prev_digests"]
-        for i, (name, data) in enumerate(receipts):
-            if not isinstance(data, dict):
-                continue
-            # Compute actual digest of this receipt
-            actual_digest = receipt_digest_l1(data)
-            # The expected prev digest for receipt i is the digest of receipt i-1
-            if i < len(expected_prevs):
-                # Load runtime context for this receipt and check prev_receipt_digest
-                stem = Path(name).stem
-                parts = stem.split("-")
-                rc = None
-                if len(parts) >= 2 and parts[-1].isdigit():
-                    rc_path = case_dir / f"runtime-context-{parts[-1]}.json"
-                    if rc_path.exists():
-                        rc = load_json(rc_path)
-                if rc is None:
-                    rc_path = case_dir / "runtime-context.json"
-                    if rc_path.exists():
-                        rc = load_json(rc_path)
-                if rc and "prev_receipt_digest" in rc:
-                    actual_prev = rc["prev_receipt_digest"]
-                    expected_prev = expected_prevs[i]
-                    checks.append((
-                        "chain:prev-hash-matches",
-                        actual_prev == expected_prev,
-                        "ok" if actual_prev == expected_prev
-                        else f"prev_receipt_digest mismatch in {name}: declared {str(actual_prev)[:24]}... expected {str(expected_prev)[:24]}...",
-                    ))
+    # 5. prev-hash linkage — ANCHORED to the predecessor receipt's own bytes.
+    #
+    # The chain anchor is the SHA-256(JCS) digest of receipt i-1 (receipt_digest_l1:
+    # the L1 receipt minus its signature field). Both consumer-facing declarations
+    # — runtime-context's prev_receipt_digest and chain.json's expected_prev_digests
+    # — are cross-checked AGAINST that computed anchor; neither declaration is a
+    # truth source. Comparing the two declarations to each other (previous
+    # behaviour) could not detect a case where both declared the same wrong digest.
+    # Reported by Joel Hillier (Certisyn) during independent interoperability
+    # review, 2026-08-30.
+    computed_prevs: list = [None]
+    for _, _data in receipts[1:]:
+        computed_prevs.append(receipt_digest_l1(_data) if isinstance(_data, dict) else None)
+    # receipts are already in chain order (chain_spec["order"] or file order),
+    # so receipts[i-1] is receipt i's predecessor.
+    for i, (name, data) in enumerate(receipts):
+        if i == 0:
+            continue
+        anchor = computed_prevs[i]
+        if anchor is None:
+            continue
+        stem = Path(name).stem
+        parts = stem.split("-")
+        rc = None
+        if len(parts) >= 2 and parts[-1].isdigit():
+            rc_path = case_dir / f"runtime-context-{parts[-1]}.json"
+            if rc_path.exists():
+                rc = load_json(rc_path)
+        if rc is None:
+            rc_path = case_dir / "runtime-context.json"
+            if rc_path.exists():
+                rc = load_json(rc_path)
+        declared_prev = rc.get("prev_receipt_digest") if rc else None
+        if declared_prev is not None:
+            checks.append((
+                "chain:prev-hash-matches",
+                declared_prev == anchor,
+                "ok" if declared_prev == anchor
+                else f"prev_receipt_digest in runtime context is not the digest of predecessor {receipts[i-1][0]}: declared {str(declared_prev)[:32]}... computed anchor {anchor[:32]}...",
+            ))
+        # chain.json expected_prev_digests is advisory metadata — cross-check only.
+        if chain_spec and "expected_prev_digests" in chain_spec:
+            expected_prevs = chain_spec["expected_prev_digests"]
+            if i < len(expected_prevs) and expected_prevs[i] is not None:
+                spec_prev = expected_prevs[i]
+                checks.append((
+                    "chain:spec-prev-crosscheck",
+                    spec_prev == anchor,
+                    "ok" if spec_prev == anchor
+                    else f"chain.json expected_prev_digests[{i}] {str(spec_prev)[:32]}... disagrees with computed anchor {anchor[:32]}...",
+                ))
 
     return checks
 

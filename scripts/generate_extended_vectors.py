@@ -746,6 +746,22 @@ def gen_10_chain() -> None:
          "expects_predecessor": True},
     )
 
+    # 10e: prev-hash declaration unanchored — declarations agree with each
+    # other but not with the computed predecessor digest (regression vector).
+    re0, ae0, repe0, rce0 = _chain_receipt(0)
+    wrong_anchor = "sha256:" + "b" * 64
+    re1, ae1, repe1, rce1 = _chain_receipt(1, prev_digest=wrong_anchor)
+    _write_chain_case(
+        group / "10e-prev-hash-unanchored",
+        [(re0, ae0, repe0, rce0), (re1, ae1, repe1, rce1)],
+        {"verdict": "invalid", "reason": "prev_hash mismatch"},
+        "# Case 10e — Prev-hash declaration unanchored (Negative)\n\n"
+        "Both prev-hash declarations agree with each other but not with receipt-1's\n"
+        "actual computed digest. Contributed by Joel Hillier (Certisyn).\n",
+        {"order": ["receipt-1.json", "receipt-2.json"], "first_sequence": 0,
+         "expected_prev_digests": [None, wrong_anchor]},
+    )
+
     write_text(group / "README.md", """# Case 10 — Chain Negatives
 
 Tests chain integrity: sequence contiguity, prev-hash linkage,
