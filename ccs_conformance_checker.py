@@ -1,3 +1,10 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Correctover
+#
+# This file is part of the ccs-conformance-checker package and is licensed
+# under the MIT License. The full license text is in checkers/LICENSE.
+# (The repository root LICENSE is CC0 1.0; this file is explicitly MIT.)
+
 """Entry-point shim for ccs-conformance-check.
 
 Imports and runs the independent checker via importlib so it works both from
