@@ -1,8 +1,8 @@
 # Case 05 — Cross-Field Semantic Negative Vectors
 
 These vectors test semantic validation **beyond** structural and signature checks.
-They were specifically requested by Henri Sirkkavaara (Vaara) on the IETF SCITT
-mailing list to catch implementation bugs that pure signature verification misses.
+They were specifically requested by Henri Sirkkavaara (Vaara) in SCITT
+interoperability discussions to catch implementation bugs that pure signature verification misses.
 
 | Sub-case | Issue | Signature | Expected |
 |---|---|---|---|
