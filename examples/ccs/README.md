@@ -64,3 +64,11 @@ MIT license; Python standard library plus `cryptography` and `jcs` only, and
 it operates **without importing the CCS verifier package**) lives
 in the pinned CCS bundle repository at bundle commit [`a3503b2`](https://github.com/DSHCorrectover/ccs-conformance-vectors/commit/a3503b2bc48922f92a28c372003885a0831da02b),
 not in this repository. It independently verifies the pinned bundle.
+
+## License
+
+Files in this directory are provided under two different licenses:
+
+- **`vectors.reference.json`** and **`JOINT-ASSESSMENT.md`** are byte-identical copies from the EMILIA protocol repository ([emiliaprotocol/emilia-protocol](https://github.com/emiliaprotocol/emilia-protocol)), commits `995d803` and `a8a0097`. They are licensed under the **Apache License 2.0** (Copyright 2026 the EMILIA project authors) and are reproduced here for interoperability verification under that license; the full license text and attribution are in [`LICENSE`](LICENSE). The EMILIA project has not relicensed these files under CC0.
+- **`upstream-01-allow.receipt.json`** is a copy of the CCS v1.4 conformance `01-allow` receipt from this repository's own vector bundle (`vectors/`) and remains **CC0 1.0 Universal** (public domain).
+- This README and all other CCS-authored contents in this directory are **CC0 1.0 Universal**.
