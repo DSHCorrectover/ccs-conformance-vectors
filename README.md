@@ -165,7 +165,7 @@ All v1.4.0 vectors use a reproducible Ed25519 key pair:
 
 ### Vector Cases
 
-The v1.4.0 bundle contains **8 test cases: 3 valid (positive) + 5 invalid (negative)**. Each case includes a receipt, signature, public key, signing input, and expected verdict.
+The complete v1.4.0 conformance suite contains **66 signed test cases**. The table below lists the **base cross-field semantic set, cases 01-05: 8 test cases (3 valid + 5 invalid)**. Groups 06-12 add the extended suites (06 L2 behavior: 4; 07 structure: 36; 08 temporal: 5; 09 identity: 3; 10 chain: 5; 11 integrity: 3; 12 nonce: 2). Each case includes a receipt (or receipt chain), signature, public key, signing input, and expected verdict.
 
 | Case | Type | Description | Expected |
 |---|---|---|---|
@@ -227,12 +227,13 @@ If you are building an independent CCS implementation and find a discrepancy, pl
 
 ## License Scope
 
-This repository contains two distinct components with separate licenses:
+The root LICENSE of this repository is **CC0 1.0 Universal**. Components and companion artifacts carry the following licenses:
 
 | Component | Path | License |
 |---|---|---|
 | Conformance vector data (receipts, signatures, keys, manifests) | `vectors/` | **CC0 1.0 Universal** (public domain) |
-| Independent conformance checker | `checkers/` | **MIT License** |
-| Repository root (documentation, build scripts) | `*.md`, `scripts/` | **CC0 1.0 Universal** |
+| Independent conformance checker package | `checkers/` | **MIT License** |
+| Root installable checker entry point | `pyproject.toml`, `ccs_conformance_checker.py` | **MIT** (part of the `ccs-conformance-checker` package; `pyproject.toml` declares `license = "MIT"`) |
+| Root documentation, build scripts, standalone checks, examples | `*.md`, `scripts/`, `verify_v131.py`, `examples/` | **CC0 1.0 Universal** |
 
-The **ccs-verifier** PyPI reference implementation is a separate codebase licensed under the **Elastic License 2.0 (ELv2)**. The ELv2 does not apply to any file in this repository. This separation allows independent implementations to use the test vectors and checker without ELv2 restrictions, while the production verifier retains its own license terms.
+Not in this repository: the **ccs-verifier** PyPI reference implementation (package version 1.3.0) is a **separately distributed package** whose metadata declares the **Elastic License 2.0 (ELv2)**. The ELv2 does not apply to any file in this repository, and the conformance checker imports zero production `ccs-verifier` code. This separation lets independent implementations use the test vectors and checker without ELv2 restrictions.
