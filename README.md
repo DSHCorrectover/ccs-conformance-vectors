@@ -8,7 +8,7 @@ These vectors are **public domain (CC0)**. They exist so independent implementat
 
 ## What is CCS?
 
-CCS is a seven-dimension runtime verification standard for AI agent tool invocations. Every agent tool call produces a tamper-evident, cryptographically signed receipt (Ed25519 over JCS-canonicalized JSON). The CCS specification and reference implementation are maintained in the open-source CCS project; see the [ccs-verifier package](https://pypi.org/project/ccs-verifier/) for the production verifier.
+CCS is a seven-dimension runtime verification specification for AI agent tool invocations. Every agent tool call produces a tamper-evident, cryptographically signed receipt (Ed25519 over JCS-canonicalized JSON). The CCS specification and reference implementation are maintained in the open-source CCS project; see the [ccs-verifier package](https://pypi.org/project/ccs-verifier/) for the production verifier.
 
 ## Directory Layout
 
