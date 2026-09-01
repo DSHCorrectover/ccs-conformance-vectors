@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
-"""Independent verifier for CCS v1.3.1 paired conformance vectors."""
+"""Independent verifier for CCS v1.3.1 paired conformance vectors.
+
+Provenance note: this legacy v1.3.1 verifier imports `ccs_verifier.ccs_verifier_l1`
+from the separately distributed `ccs-verifier` PyPI package (package version
+1.3.0), which is licensed under the Elastic License 2.0 (ELv2) and is NOT
+vendored in this repository. The current v1.4 independent checker
+(`checkers/independent_checker.py`) imports no `ccs-verifier` code. This script
+itself is CC0 1.0.
+"""
 import base64, copy, glob, hashlib, json, os, sys
 import jcs
 from cryptography.exceptions import InvalidSignature
