@@ -8,9 +8,7 @@ These vectors are **public domain (CC0)**. They exist so independent implementat
 
 ## What is CCS?
 
-CCS is a seven-dimension runtime verification standard for AI agent tool invocations. Every agent tool call produces a tamper-evident, cryptographically signed receipt (Ed25519 over JCS-canonicalized JSON). The specification is published as an IETF Internet-Draft:
-
-- [draft-correctover-ccs](https://datatracker.ietf.org/doc/draft-correctover-ccs/)
+CCS is a seven-dimension runtime verification standard for AI agent tool invocations. Every agent tool call produces a tamper-evident, cryptographically signed receipt (Ed25519 over JCS-canonicalized JSON). The CCS specification and reference implementation are maintained in the open-source CCS project; see the [ccs-verifier package](https://pypi.org/project/ccs-verifier/) for the production verifier.
 
 ## Directory Layout
 
@@ -150,7 +148,7 @@ These vectors complement Providex-AI/rootsign PDR receipts ([Zenodo DOI 10.5281/
 ## v1.4.0 Conformance Vectors
 
 The v1.4.0-conformance release adds **cross-field semantic negative vectors**
-requested by Henri Sirkkavaara (Vaara) on the IETF SCITT mailing list. These
+requested by Henri Sirkkavaara (Vaara) in SCITT interoperability discussions. These
 vectors test validation logic **beyond** signature verification — catching
 implementation bugs where the signer vouches for semantically incorrect data.
 
