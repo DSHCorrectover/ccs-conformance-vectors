@@ -30,6 +30,15 @@ vectors/
       action-2-block.json       # Same L1 receipt, different key
       behavior-1-allow.json     # Signed behavior observation: not_observed
       behavior-2-block.json     # Signed behavior observation: observed_and_rejected
+  v1.4.0-conformance/
+    manifest.json               # SHA-256 pinning for the 66 signed receipt cases
+    01-allow/ ... 12-nonce-negatives/   # Signed receipt test cases (see below)
+  mustfail-v1/
+    manifest.json               # SHA-256 pinning for the MUST-FAIL admission vectors
+    vectors.jsonl               # Flat machine-readable index
+    S01-* ... S11-*/            # 11 base MUST-FAIL single-call scenarios
+    W01-* ... W03-*/            # 3 end-to-end multi-tool workflow attack chains
+    C01-benign-read-control/    # MUST-PASS control (a compliant verifier admits this)
 ```
 
 ## v1.3.0 Paired Vectors: Sidecar Key vs In-Process Key
@@ -218,6 +227,49 @@ byte-identical output across runs.
 - Vector files: **CC0 1.0** (public domain, same as repository)
 - Independent checker: **MIT License** (`checkers/LICENSE`)
 
+## MUST-FAIL Admission-Layer Vectors (`mustfail-v1`)
+
+The `vectors/mustfail-v1/` directory adds the first externally released slice of
+the **CCS Conformance Verification Benchmark**: MUST-FAIL vectors for the
+*admission decision itself* (the signed suites above test evidence receipts).
+A MUST-FAIL vector is a tool call — or a multi-tool workflow — that every
+CCS-compliant verifier must **deny / fail closed**.
+
+The set ships **15 vectors: 14 MUST-FAIL + 1 MUST-PASS control**:
+
+- **11 base single-call scenarios** (`S01`–`S11`), one per threat class across
+  the seven CCS dimensions: Structure (malformed envelope), Schema (type
+  confusion), Latency (unbounded hang), Cost (budget overrun), Identity (forged
+  receipt / unknown issuer), Integrity (nonce replay), and Security (command
+  injection, SSRF to the cloud metadata service, credential exfiltration,
+  out-of-allowlist tool, prompt-injection-driven action).
+- **3 end-to-end workflow vectors** (`W01`–`W03`) where every individual call
+  is admissible but the chain is an attack: PHI read → webhook egress outside
+  the data scope; allowlisted fetch redirected to the metadata service →
+  credential harvest → callback; and prompt-injection-in-a-file → transcript
+  export → credential-bearing forwarding. These require cross-step data-flow
+  labeling, redirect-chain observation, and instruction-provenance checks that
+  per-call scoring cannot provide.
+- **1 benign control** (`C01`) that a compliant verifier must admit — failing it
+  means the verifier is fail-shut/over-blocking, not fail-closed.
+
+Each vector embeds the admission policy under which its verdict was computed
+(allowlists, budgets, thresholds, trusted issuers) and cites the violated
+dimension(s); hashes are pinned in `vectors/mustfail-v1/manifest.json`. All
+content is synthetic: RFC 2606 reserved names, the documented metadata address
+`169.254.169.254`, and well-known published documentation example credentials
+only — no real secrets or endpoints.
+
+**How to use:** run the vectors through any CCS verifier; a conforming result
+denies all 14 MUST-FAIL vectors and admits the `C01` control, then emit a
+conformance report. See `vectors/mustfail-v1/README.md` for the full scenario
+table and per-vector detection guidance.
+
+The seven-dimension admission model is described in the CCS specification work
+referenced here as **draft-correctover-ccs-08** — an **individual submission,
+not an RFC and not an IETF endorsement**. The benchmark is citable via Zenodo
+DOI [10.5281/zenodo.21783723](https://doi.org/10.5281/zenodo.21783723).
+
 ## Contributing
 
 If you are building an independent CCS implementation and find a discrepancy, please open an issue with your vector and expected result.
@@ -229,7 +281,7 @@ The root LICENSE of this repository is **CC0 1.0 Universal**. Components and com
 
 | Component | Path | License |
 |---|---|---|
-| Conformance vector data (receipts, signatures, keys, manifests) | `vectors/` | **CC0 1.0 Universal** (public domain) |
+| Conformance vector data (signed receipts, signatures, keys, manifests, and the `mustfail-v1` admission/workflow vectors) | `vectors/` (incl. `v1.1.20/`, `v1.3.0/`, `v1.4.0-conformance/`, `mustfail-v1/`) | **CC0 1.0 Universal** (public domain) |
 | Independent conformance checker package | `checkers/` | **MIT License** |
 | Root installable checker entry point | `pyproject.toml`, `ccs_conformance_checker.py` | **MIT** (part of the `ccs-conformance-checker` package; `pyproject.toml` declares `license = "MIT"`) |
 | Root documentation, build scripts, standalone checks | root `*.md`, `scripts/`, `verify_v131.py` | **CC0 1.0 Universal** |

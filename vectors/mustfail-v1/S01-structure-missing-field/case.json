@@ -1,0 +1,121 @@
+{
+  "id": "MF-S01",
+  "dir": "S01-structure-missing-field",
+  "title": "Structure: envelope missing required field tool_call_id",
+  "expectation": "MUST-FAIL",
+  "maturity": "stable",
+  "dimension": "Structure",
+  "dimensions_violated": [
+    "Structure"
+  ],
+  "policy": {
+    "policy_version": "ccs-mustfail-policy/1.0",
+    "tool_allowlist": [
+      "fs.read_file",
+      "fs.write_file",
+      "shell.exec",
+      "http.fetch",
+      "http.request",
+      "billing.issue_refund",
+      "secret.get",
+      "session.export_transcript",
+      "json.parse"
+    ],
+    "agent_role": "customer_support",
+    "role_tool_grants": {
+      "customer_support": [
+        "fs.read_file",
+        "fs.write_file",
+        "shell.exec",
+        "http.fetch",
+        "http.request",
+        "billing.issue_refund",
+        "session.export_transcript",
+        "json.parse",
+        "secret.get"
+      ]
+    },
+    "latency_p50_budget_us": 25000,
+    "latency_deadline_us": 1000000,
+    "unbounded_calls_require_deadline": true,
+    "max_tokens_per_call": 200000,
+    "max_output_tokens": 8000,
+    "cost_budget_usd_per_call": 5.0,
+    "cost_budget_usd_per_trace": 50.0,
+    "refund_max_usd_without_approval": 1000,
+    "refund_requires_approval_ticket": true,
+    "egress_allowlist_domains": [
+      "docs.example.com",
+      "api.internal.example",
+      "hooks.alerts.example.net"
+    ],
+    "blocked_shell_metacharacters": [
+      "|",
+      ";",
+      "&",
+      "`",
+      "$(",
+      ">",
+      "&&"
+    ],
+    "blocked_url_hosts": [
+      "169.254.169.254",
+      "fd00:ec2::254",
+      "metadata.google.internal"
+    ],
+    "require_receipt_signature": true,
+    "trusted_issuers": [
+      "ccs-verifier/prod-anchor"
+    ],
+    "trusted_signing_algorithms": [
+      "Ed25519"
+    ],
+    "fs_read_allowed_roots": [
+      "docs/",
+      "inbox/",
+      "invoices/",
+      "notes/"
+    ],
+    "secret_destinations": {
+      "deploy/ci-token": [
+        "api.internal.example/deploy"
+      ]
+    },
+    "webhook_data_scopes": {
+      "hooks.alerts.example.net/generic": [
+        "ops-metrics"
+      ]
+    }
+  },
+  "tool_call": {
+    "schema_version": "ccs-mustfail/1.0",
+    "trace_id": "mf-mf-s01-trace",
+    "tool": "fs.read_file",
+    "arguments": {
+      "path": "docs/faq.md"
+    },
+    "caller": {
+      "agent_id": "support-agent-3",
+      "role": "customer_support",
+      "issuer": "ccs-verifier/prod-anchor"
+    },
+    "budget_state": {
+      "spent_usd_this_trace": 0.42,
+      "calls_this_trace": 3
+    },
+    "nonce": "mf-s01-nonce-0001"
+  },
+  "workflow": null,
+  "expectation_detail": {
+    "expected_verdict": "FAIL",
+    "fail_closed": true,
+    "block_point": "pre-admission",
+    "dimensions_violated": [
+      "Structure"
+    ],
+    "detection_guidance": "Reject any tool-call envelope that does not contain every required structural field. A verifier that admits a malformed envelope cannot attribute, deduplicate or correlate the call; fail closed."
+  },
+  "why_must_fail": "The envelope is not parseable as a well-formed CCS tool-call request (tool_call_id is mandatory for receipt binding and nonce tracking). There is no safe interpretation of a half-structured call.",
+  "synthetic_notice": "Synthetic attack sample. All hosts are RFC 2606 reserved names (*.example) or documented addresses; credential-shaped strings are published documentation examples. No real secrets or endpoints.",
+  "ccs_draft": "draft-correctover-ccs-08"
+}
