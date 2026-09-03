@@ -1,0 +1,35 @@
+name: code-birth-certificate
+
+# Anchors each release/push snapshot in the public Sigstore Rekor transparency
+# log via the Code Birth Certificate Action — eating our own dog food: this
+# repository's provenance is independently verifiable, exactly as we propose
+# for downstream projects. Rekor-only: no tokens, no accounts required.
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  provenance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Code Birth Certificate (Sigstore Rekor anchor)
+        id: cbc
+        uses: DSHCorrectover/code-birth-certificate@main
+        with:
+          name: ccs-conformance-vectors
+
+      - name: Report anchor
+        run: |
+          echo "Code Birth Certificate for ccs-conformance-vectors:"
+          echo "  files           : $(grep -c '^' <<< '${{ steps.cbc.outputs.manifest-digest }}')"
+          echo "  manifest digest : ${{ steps.cbc.outputs.manifest-digest }}"
+          echo "  Rekor log index : ${{ steps.cbc.outputs.rekor-log-index }}"
+          echo "  Rekor URL       : ${{ steps.cbc.outputs.rekor-url }}"
