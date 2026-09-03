@@ -1,6 +1,7 @@
 # CCS Conformance Vectors
 
 [![CC](https://img.shields.io/badge/License-CC0%201.0-lightgrey.svg)](LICENSE)
+[![Rekor anchored](https://img.shields.io/badge/Rekor%20anchored-logIndex%202697248662-1455A3)](https://search.sigstore.dev/?logIndex=2697248662)
 
 Reference conformance test vectors for the **Correctover Conformance Shape (CCS)** receipt specification.
 
