@@ -266,6 +266,13 @@ denies all 14 MUST-FAIL vectors and admits the `C01` control, then emit a
 conformance report. See `vectors/mustfail-v1/README.md` for the full scenario
 table and per-vector detection guidance.
 
+
+**Related tooling:** a free, open-source scanner that runs entirely in
+your browser — your source code never leaves the machine, no upload and no
+sign-up — and checks MCP servers and agent code for the issue classes these
+vectors encode (credential exposure, SSRF, command injection, missing auth)
+is available at <https://dshcorrectover.github.io/agent-audit/scan.html>.
+
 The seven-dimension admission model is described in the CCS specification work
 referenced here as **draft-correctover-ccs-08** — an **individual submission,
 not an RFC and not an IETF endorsement**. The benchmark is citable via Zenodo
