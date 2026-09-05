@@ -1,0 +1,12 @@
+{
+  "event_id": "pbc-01-deny-2026-09-05-001",
+  "ccs_verdict": "block",
+  "neutral_verdict": "DENY",
+  "signature_valid": true,
+  "public_key_fingerprint": "80e283d8db039992",
+  "args_digest": "2f5644b44f1e92f97afcccbfb7514bf515bd4c5937f4905e60973e59ffd1d0e4",
+  "request_hash": "09c7248ec437201829b011ad6e18d87c91652de0fb9d5d382d7488ed563ddeb2",
+  "response_hash": "056c9b143cdbc9046a2c9457c95c011d184b25b9dd4eefa85d2923e28a15028f",
+  "config_hash": "8f0dbe6c4e2640e81d703aaa544f22c30aacbf1eea6dbf1fc4bfa9d785973d79",
+  "note": "Verify with verify_ccs_receipt.py. Key is fixture-only."
+}

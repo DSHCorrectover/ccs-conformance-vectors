@@ -1,0 +1,6 @@
+{
+  "executed": false,
+  "gate_verdict": "DENY",
+  "reason_code": "POLICY_DENY_SYSTEM_PATH_WRITE",
+  "reason": "Command appends to /etc/passwd, which matches rule system_path_write (writes under /etc/ are denied)."
+}

