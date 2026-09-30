@@ -274,7 +274,7 @@ vectors encode (credential exposure, SSRF, command injection, missing auth)
 is available at <https://dshcorrectover.github.io/agent-audit/scan.html>.
 
 The seven-dimension admission model is described in the CCS specification work
-referenced here as **draft-correctover-ccs-08** — an **individual submission,
+referenced here as **draft-correctover-ccs-09** — an **individual submission,
 not an RFC and not an IETF endorsement**. The benchmark is citable via Zenodo
 DOI [10.5281/zenodo.21783723](https://doi.org/10.5281/zenodo.21783723).
 
