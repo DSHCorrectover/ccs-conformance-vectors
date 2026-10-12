@@ -34,6 +34,10 @@ vectors/
   v1.4.0-conformance/
     manifest.json               # SHA-256 pinning for the 66 signed receipt cases
     01-allow/ ... 12-nonce-negatives/   # Signed receipt test cases (see below)
+  canonicalization-v1/
+    manifest.json               # SHA-256 pinning for JCS (RFC 8785) numeric boundary vectors
+    negzero/                    # Wire {"n":-0,"s":"-0"} canonicalizes to {"n":0,"s":"-0"} (+/- signature pair)
+    pluszero/                   # Plain 0/"0" baseline, distinct canonical preimage
   mustfail-v1/
     manifest.json               # SHA-256 pinning for the MUST-FAIL admission vectors
     vectors.jsonl               # Flat machine-readable index
@@ -289,7 +293,7 @@ The root LICENSE of this repository is **CC0 1.0 Universal**. Components and com
 
 | Component | Path | License |
 |---|---|---|
-| Conformance vector data (signed receipts, signatures, keys, manifests, and the `mustfail-v1` admission/workflow vectors) | `vectors/` (incl. `v1.1.20/`, `v1.3.0/`, `v1.4.0-conformance/`, `mustfail-v1/`) | **CC0 1.0 Universal** (public domain) |
+| Conformance vector data (signed receipts, signatures, keys, manifests, and the `mustfail-v1` admission/workflow vectors) | `vectors/` (incl. `v1.1.20/`, `v1.3.0/`, `v1.4.0-conformance/`, `canonicalization-v1/`, `mustfail-v1/`) | **CC0 1.0 Universal** (public domain) |
 | Independent conformance checker package | `checkers/` | **MIT License** |
 | Root installable checker entry point | `pyproject.toml`, `ccs_conformance_checker.py` | **MIT** (part of the `ccs-conformance-checker` package; `pyproject.toml` declares `license = "MIT"`) |
 | Root documentation, build scripts, standalone checks | root `*.md`, `scripts/`, `verify_v131.py` | **CC0 1.0 Universal** |

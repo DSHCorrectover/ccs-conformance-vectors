@@ -17,6 +17,17 @@ Supports:
   - Integrity negatives (request/params/config/response hash mismatches)
   - Nonce uniqueness within a chain / bundle
   - L2 linked L1 digest verification
+  - canonicalization-v1: JCS (RFC 8785) numeric boundary vectors over raw
+    wire JSON text. Each input carries two separate members: a numeric
+    member "n" (wire integer "-0"/"0") and a string member "s" (wire
+    string "-0"/"0", the signed digit's string form), so a numeric value
+    cannot be conflated with its string form. negzero canonicalizes to
+    {"n":0,"s":"-0"} and pluszero to {"n":0,"s":"0"} (different
+    preimages, different signatures); a negative signature pins the
+    rejected literal-preserving preimage {"n":-0,"s":"-0"}, and the
+    positive signature is additionally asserted INVALID over the
+    numeric/string confusion preimages {"n":0,"s":0} and
+    {"n":"-0","s":-0}.
 
 Usage:
     python checkers/independent_checker.py <vectors-directory>
@@ -1219,6 +1230,627 @@ def verify_case(case_dir: Path) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# canonicalization-v1: JCS (RFC 8785) numeric boundary vectors
+# ---------------------------------------------------------------------------
+#
+# These cases are *not* CCS receipts. Each case directory pins a raw wire
+# JSON text (input.json), the JCS canonical bytes expected from it, and an
+# Ed25519 signature over those canonical bytes. Every input carries two
+# separate members: a numeric member "n" (wire integer "-0" or "0") and a
+# string member "s" (wire string "-0" or "0", the signed digit's string
+# form). The integer token -0 and the string "-0" are carried as separate
+# members so a numeric value cannot be conflated with its string form.
+#
+#   negzero  wire {"n":-0,"s":"-0"} -> JCS {"n":0,"s":"-0"} -> sig A
+#   pluszero wire {"n":0,"s":"0"}   -> JCS {"n":0,"s":"0"}  -> sig B
+#
+# The string member is preserved verbatim, so the two cases have two
+# different canonical preimages and two different signatures (sig A != sig
+# B). CPython's parser already normalizes the integer "-0" token to 0, so
+# the wire literal cannot survive a json.loads -> canonicalize round trip;
+# a literal-preserving implementation is instead pinned by bidirectional
+# signature evidence over exact preimage bytes:
+#
+#   signature.sig           = Ed25519(priv, the case's canonical bytes)
+#   negative-signature.sig  = Ed25519(priv, rejected literal
+#                                    {"n":-0,"s":"-0"}) [negzero only]
+#
+# A conforming verifier observes: positive signature VALID on the case's
+# canonical bytes and INVALID on the rejected literal and every numeric/
+# string confusion preimage; the negative signature (negzero only) VALID on
+# the rejected literal alone.
+
+CANONICALIZATION_CORPUS_VERSION = "canonicalization-v1"
+
+# Pinned boundary facts (also asserted in the generator); stored as text so
+# the checker never trusts expected.json for the bytes it signs against.
+NEGZERO_REJECTED_LITERAL = '{"n":-0,"s":"-0"}'
+CONFUSION_STRING_AS_NUMBER = '{"n":0,"s":0}'
+CONFUSION_TYPES_SWAPPED = '{"n":"-0","s":-0}'
+
+
+def _verify_ed25519_raw(pub_bytes: bytes, sig_bytes: bytes, message: bytes) -> bool:
+    """Return True iff a raw Ed25519 signature verifies over message."""
+    try:
+        Ed25519PublicKey.from_public_bytes(pub_bytes).verify(sig_bytes, message)
+        return True
+    except InvalidSignature:
+        return False
+
+
+def verify_canonicalization_case(case_dir: Path) -> dict:
+    """Verify one JCS numeric-boundary case.
+
+    Returns a dict with keys case, passed, reason, checks(list[(name,bool,detail)]).
+
+    Each case pins a raw wire document carrying two separate members:
+    numeric member "n" (wire token -0 or 0) and string member "s" (wire
+    string "-0" or "0"). The checker pins per-member wire/canonical forms,
+    the whole-document canonical bytes, the rejected literal preimage, one
+    or more numeric/string confusion preimages, and a bidirectional
+    signature matrix. negzero additionally ships negative-signature.sig
+    over the rejected literal; pluszero is the plain-zero baseline.
+    """
+    result: dict[str, Any] = {
+        "case": case_dir.name,
+        "passed": True,
+        "reason": None,
+        "checks": [],
+    }
+
+    def record(name: str, ok: bool, detail: str) -> None:
+        result["checks"].append((name, ok, detail))
+        if not ok and result["reason"] is None:
+            result["passed"] = False
+            result["reason"] = detail
+
+    expected_path = case_dir / "expected.json"
+    input_path = case_dir / "input.json"
+    sig_path = case_dir / "signature.sig"
+    for label, p in (
+        ("expected.json", expected_path),
+        ("input.json", input_path),
+        ("signature.sig", sig_path),
+    ):
+        if not p.exists():
+            record(f"case:{label}", False, f"{label} missing")
+            return result
+
+    try:
+        expected = load_json(expected_path)
+    except Exception as exc:
+        record("case:expected-load", False, f"cannot parse expected.json: {exc}")
+        return result
+
+    is_negzero = case_dir.name == "negzero" or expected.get("wire_literal") == "-0"
+    is_pluszero = case_dir.name == "pluszero"
+
+    record(
+        "case:raw-text-flag",
+        expected.get("input_is_raw_json_text") is True,
+        "expected.json must declare input_is_raw_json_text=true",
+    )
+    record(
+        "case:expect",
+        expected.get("expect") == "valid-for-rfc8785",
+        "expected.json expect must be 'valid-for-rfc8785'",
+    )
+    record(
+        "case:algorithm",
+        expected.get("signing_algorithm") == "Ed25519",
+        "signing_algorithm must be Ed25519",
+    )
+
+    # --- Public key material ---
+    try:
+        pub_bytes = b64decode_strict(expected["public_key_b64"])
+        record("pubkey:base64", True, "ok")
+        record(
+            "pubkey:32-bytes",
+            len(pub_bytes) == 32,
+            "ok" if len(pub_bytes) == 32
+            else f"public key must be 32 bytes, got {len(pub_bytes)}",
+        )
+    except Exception as exc:
+        record("pubkey:base64", False, f"public key base64 error: {exc}")
+        return result
+
+    declared_fpr = expected.get("public_key_fingerprint", "")
+    computed_fpr = hashlib.sha256(pub_bytes).hexdigest()[:16]
+    record(
+        "pubkey:fingerprint",
+        declared_fpr == computed_fpr,
+        "ok" if declared_fpr == computed_fpr
+        else f"declared fingerprint {declared_fpr!r} != computed {computed_fpr!r}",
+    )
+
+    # --- Raw wire text fixture ---
+    input_bytes = input_path.read_bytes()
+    record(
+        "input:no-bom",
+        not input_bytes.startswith(b"\xef\xbb\xbf"),
+        "ok" if not input_bytes.startswith(b"\xef\xbb\xbf")
+        else "input.json must not carry a UTF-8 BOM",
+    )
+    json_text_bytes = input_bytes[:-1] if input_bytes.endswith(b"\n") else input_bytes
+    record(
+        "input:single-trailing-lf",
+        not input_bytes.endswith(b"\n\n") and input_bytes.endswith(b"\n"),
+        "ok" if (not input_bytes.endswith(b"\n\n") and input_bytes.endswith(b"\n"))
+        else "input.json must end with exactly one LF",
+    )
+    try:
+        raw_text = json_text_bytes.decode("utf-8")
+        record("input:utf8-decodable", True, "ok")
+    except UnicodeDecodeError as exc:
+        record("input:utf8-decodable", False, f"input.json is not UTF-8: {exc}")
+        return result
+
+    try:
+        parsed = json.loads(raw_text)
+        record("input:json-parseable", True, "ok")
+    except json.JSONDecodeError as exc:
+        record("input:json-parseable", False, f"raw input text is not valid JSON: {exc}")
+        return result
+
+    # --- Per-member wire pins: two separate members, numeric vs string ---
+    members = expected.get("members")
+    members_ok = isinstance(members, dict) and set(members) == {"n", "s"}
+    record(
+        "members:separate-n-and-s",
+        members_ok,
+        "expected.json members block declares exactly two members: n (number) and s (string)"
+        if members_ok
+        else f"expected.json members must be an object with exactly keys n,s; got {list(members) if isinstance(members, dict) else members!r}",
+    )
+
+    want_string_token = '"-0"' if is_negzero else '"0"'
+    want_string_value = "-0" if is_negzero else "0"
+    want_numeric_wire = "-0" if is_negzero else "0"
+    if members_ok:
+        n_spec = members["n"]
+        s_spec = members["s"]
+        record(
+            "members:n-is-number",
+            n_spec.get("json_type") == "number"
+            and n_spec.get("expected_canonical_member") == '"n":0'
+            and n_spec.get("expected_canonical_token") == "0"
+            and n_spec.get("wire_token") == want_numeric_wire,
+            f"numeric member n wire token {n_spec.get('wire_token')!r}, canonical {n_spec.get('expected_canonical_member')!r}",
+        )
+        record(
+            "members:s-is-string",
+            s_spec.get("json_type") == "string"
+            and s_spec.get("expected_canonical_member") == f'"s":{want_string_token}'
+            and s_spec.get("expected_canonical_token") == want_string_token
+            and s_spec.get("wire_token") == want_string_token,
+            f"string member s wire token {s_spec.get('wire_token')!r}, canonical {s_spec.get('expected_canonical_member')!r} (preserved verbatim with quotes)",
+        )
+
+        n_wire_pat = ('"n":' + want_numeric_wire).encode("utf-8")
+        s_wire_pat = ('"s":' + want_string_token).encode("utf-8")
+        record(
+            "wire:members-present-and-separate",
+            n_wire_pat in json_text_bytes and s_wire_pat in json_text_bytes,
+            f"raw wire contains separate members {n_wire_pat!r} and {s_wire_pat!r}",
+        )
+
+        n_parsed = parsed.get("n") if isinstance(parsed, dict) else None
+        s_parsed = parsed.get("s") if isinstance(parsed, dict) else None
+        record(
+            "parse:n-is-int-zero",
+            isinstance(n_parsed, int) and not isinstance(n_parsed, bool) and n_parsed == 0,
+            (
+                f"parser yields numeric member n = {n_parsed!r} ({type(n_parsed).__name__}); integer -0 normalizes to 0"
+                if is_negzero
+                else f"parser yields numeric member n = {n_parsed!r} ({type(n_parsed).__name__}); plain integer 0 baseline"
+            )
+            if isinstance(n_parsed, int)
+            else f"numeric member n must parse to int 0, got {n_parsed!r}",
+        )
+        record(
+            "parse:s-is-string",
+            isinstance(s_parsed, str) and s_parsed == want_string_value,
+            f"string member s remains a distinct str ({s_parsed!r}); numeric/string types not conflated"
+            if isinstance(s_parsed, str) and s_parsed == want_string_value
+            else f"string member s must parse to str {want_string_value!r}, got {s_parsed!r}",
+        )
+        record(
+            "parse:members-not-equal-by-type",
+            isinstance(n_parsed, int) and isinstance(s_parsed, str)
+            and type(n_parsed) is not type(s_parsed),
+            "numeric member and string member retain distinct JSON types after parsing",
+        )
+
+        if is_negzero:
+            record(
+                "wire:negzero-literal-on-wire",
+                b'"n":-0' in json_text_bytes,
+                "raw wire text carries the integer -0 token on member n",
+            )
+            record(
+                "wire:negzero-string-preserved",
+                b'"s":"-0"' in json_text_bytes,
+                'raw wire text carries the string "-0" verbatim on member s (not the number -0)',
+            )
+
+    # --- Rejected literal pin (reviewer's literal-preserving implementation) ---
+    rejected_block = expected.get("rejected_literal")
+    rejected_declared_ok = (
+        isinstance(rejected_block, dict)
+        and rejected_block.get("utf8") == NEGZERO_REJECTED_LITERAL
+        and rejected_block.get("hex") == NEGZERO_REJECTED_LITERAL.encode("utf-8").hex()
+        and rejected_block.get("sha256") == sha256_hex(NEGZERO_REJECTED_LITERAL.encode("utf-8"))
+    )
+    record(
+        "pin:rejected-literal",
+        rejected_declared_ok,
+        f"rejected literal pinned as {NEGZERO_REJECTED_LITERAL} / {NEGZERO_REJECTED_LITERAL.encode('utf-8').hex()}"
+        if rejected_declared_ok
+        else f"rejected_literal block disagrees with the fixed pin: {rejected_block!r}",
+    )
+    rejected_bytes = NEGZERO_REJECTED_LITERAL.encode("utf-8")
+
+    # --- Numeric/string confusion pins ---
+    confusion_blocks = expected.get("confusions")
+    confusion_fixed = {
+        "confusion-string-as-number.json": CONFUSION_STRING_AS_NUMBER,
+        "confusion-types-swapped.json": CONFUSION_TYPES_SWAPPED,
+    }
+    declared_confusions: dict[str, bytes] = {}
+    confusion_block_ok = isinstance(confusion_blocks, list) and len(confusion_blocks) >= 1
+    if isinstance(confusion_blocks, list):
+        for block in confusion_blocks:
+            if not isinstance(block, dict):
+                confusion_block_ok = False
+                continue
+            fname = block.get("file")
+            text = block.get("utf8")
+            fixed_text = confusion_fixed.get(fname)
+            ok = (
+                fixed_text is not None
+                and text == fixed_text
+                and block.get("hex") == fixed_text.encode("utf-8").hex()
+                and block.get("sha256") == sha256_hex(fixed_text.encode("utf-8"))
+            )
+            confusion_block_ok = confusion_block_ok and ok
+            if ok:
+                declared_confusions[fname] = fixed_text.encode("utf-8")
+    # pluszero ships the string-as-number confusion itself and must also be
+    # checked against the negzero types-swapped bytes (see cross checks).
+    if is_pluszero:
+        confusion_block_ok = confusion_block_ok and (
+            "confusion-string-as-number.json" in declared_confusions
+        )
+    if is_negzero:
+        confusion_block_ok = confusion_block_ok and set(declared_confusions) == set(
+            confusion_fixed
+        )
+    record(
+        "pin:confusion-numeric-string",
+        confusion_block_ok,
+        "numeric/string confusion preimages pinned with exact utf8/hex/sha256: "
+        + ", ".join(sorted(declared_confusions))
+        if confusion_block_ok
+        else f"confusions block disagrees with the fixed pins: {confusion_blocks!r}",
+    )
+
+    # --- Real JCS canonicalization of the raw-text fixture ---
+    canonical = canonical_json(parsed)
+    expected_canonical_text = (
+        '{"n":0,"s":"-0"}' if is_negzero else '{"n":0,"s":"0"}'
+    )
+    expected_hex = expected.get("expected_canonical_hex", "")
+    record(
+        "jcs:canonical-hex",
+        canonical.hex() == expected_hex
+        and canonical == expected_canonical_text.encode("utf-8"),
+        "ok" if canonical.hex() == expected_hex
+        else f"JCS canonical hex {canonical.hex()} != expected {expected_hex}",
+    )
+    expected_utf8 = expected.get("expected_canonical_utf8", "")
+    record(
+        "jcs:canonical-utf8",
+        canonical.decode("utf-8", errors="replace") == expected_utf8
+        and expected_utf8 == expected_canonical_text,
+        f"canonical text {canonical.decode(errors='replace')!r}: numeric -0 normalised to 0, string preserved verbatim",
+    )
+    expected_sha = expected.get("expected_canonical_sha256", "")
+    actual_sha = hashlib.sha256(canonical).hexdigest()
+    record(
+        "jcs:canonical-sha256",
+        actual_sha == expected_sha,
+        "ok" if actual_sha == expected_sha
+        else f"canonical sha256 {actual_sha} != expected {expected_sha}",
+    )
+    record(
+        "jcs:canonical-member-order",
+        canonical[1:6] == b'"n":0',
+        "canonical members ordered lexicographically: n before s",
+    )
+
+    confusion_a = CONFUSION_STRING_AS_NUMBER.encode("utf-8")
+    confusion_b = CONFUSION_TYPES_SWAPPED.encode("utf-8")
+    record(
+        "jcs:wrong-preimages-distinct",
+        rejected_bytes != canonical
+        and confusion_a != canonical
+        and confusion_b != canonical
+        and rejected_bytes not in (confusion_a, confusion_b)
+        and confusion_a != confusion_b,
+        "rejected-literal and both confusion preimages each differ from canonical and each other",
+    )
+
+    # negzero's canonical must differ from pluszero's (string verbatim).
+    sibling_dir = case_dir.parent / ("pluszero" if is_negzero else "negzero")
+    sibling_canon_file = sibling_dir / "canonical.jcs"
+    if sibling_canon_file.exists():
+        record(
+            "jcs:sibling-canonical-differs",
+            sibling_canon_file.read_bytes() != canonical,
+            f"canonical differs from {sibling_dir.name}/canonical.jcs (distinct preimages)",
+        )
+    else:
+        record("jcs:sibling-canonical-differs", False,
+               f"sibling canonical {sibling_canon_file} not found")
+
+    # Shipped byte-preimage files must equal the pinned bytes.
+    canon_file = case_dir / "canonical.jcs"
+    record(
+        "file:canonical-jcs",
+        canon_file.exists() and canon_file.read_bytes() == canonical,
+        "canonical.jcs matches computed JCS bytes"
+        if canon_file.exists() and canon_file.read_bytes() == canonical
+        else "canonical.jcs missing or disagrees with computed JCS bytes",
+    )
+    if is_negzero:
+        rej_file = case_dir / "rejected-literal.json"
+        record(
+            "file:rejected-literal",
+            rej_file.exists() and rej_file.read_bytes() == rejected_bytes,
+            "rejected-literal.json matches pinned literal bytes (identical to negzero wire text minus LF)"
+            if rej_file.exists() and rej_file.read_bytes() == rejected_bytes
+            else "rejected-literal.json missing or disagrees with pinned literal",
+        )
+    for fname, fbytes in (
+        ("confusion-string-as-number.json", confusion_a),
+        ("confusion-types-swapped.json", confusion_b),
+    ):
+        fpath = case_dir / fname
+        if fpath.exists():
+            record(
+                f"file:{fname}",
+                fpath.read_bytes() == fbytes,
+                f"{fname} matches pinned confusion bytes"
+                if fpath.read_bytes() == fbytes
+                else f"{fname} disagrees with pin",
+            )
+
+    # --- Positive signature ---
+    sig_bytes = sig_path.read_bytes()
+    sig_len_ok = len(sig_bytes) == 64
+    record(
+        "sig:64-bytes",
+        sig_len_ok,
+        "ok" if sig_len_ok
+        else f"signature.sig must be 64 raw bytes, got {len(sig_bytes)}",
+    )
+    if not sig_len_ok:
+        return result
+    sig_b64 = expected.get("signature_b64")
+    if isinstance(sig_b64, str):
+        record(
+            "sig:b64-consistency",
+            base64.b64encode(sig_bytes).decode("ascii") == sig_b64,
+            "signature.sig bytes match expected.json signature_b64"
+            if base64.b64encode(sig_bytes).decode("ascii") == sig_b64
+            else "signature_b64 disagrees with signature.sig",
+        )
+    record(
+        "sig:positive-valid-on-canonical",
+        _verify_ed25519_raw(pub_bytes, sig_bytes, canonical),
+        "positive signature VALID over this case's JCS canonical bytes",
+    )
+    record(
+        "sig:positive-invalid-on-rejected-literal",
+        not _verify_ed25519_raw(pub_bytes, sig_bytes, rejected_bytes),
+        f"positive signature correctly INVALID over rejected literal {NEGZERO_REJECTED_LITERAL} (literal-preserving implementation rejected)"
+        if not _verify_ed25519_raw(pub_bytes, sig_bytes, rejected_bytes)
+        else "positive signature unexpectedly verifies over rejected literal",
+    )
+    record(
+        "sig:positive-invalid-on-confusion-string-as-number",
+        not _verify_ed25519_raw(pub_bytes, sig_bytes, confusion_a),
+        f"positive signature correctly INVALID over confusion {CONFUSION_STRING_AS_NUMBER} (string member coerced to number)"
+        if not _verify_ed25519_raw(pub_bytes, sig_bytes, confusion_a)
+        else "positive signature unexpectedly verifies over string-as-number confusion",
+    )
+    record(
+        "sig:positive-invalid-on-confusion-types-swapped",
+        not _verify_ed25519_raw(pub_bytes, sig_bytes, confusion_b),
+        f"positive signature correctly INVALID over confusion {CONFUSION_TYPES_SWAPPED} (numeric/string types swapped)"
+        if not _verify_ed25519_raw(pub_bytes, sig_bytes, confusion_b)
+        else "positive signature unexpectedly verifies over types-swapped confusion",
+    )
+
+    # --- Negative signature (shipped by negzero): bidirectional pin ---
+    neg_sig_path = case_dir / "negative-signature.sig"
+    if is_negzero:
+        if not neg_sig_path.exists():
+            record("neg-sig:file", False, "negzero must ship negative-signature.sig")
+        else:
+            neg_sig = neg_sig_path.read_bytes()
+            record(
+                "neg-sig:64-bytes",
+                len(neg_sig) == 64,
+                "ok" if len(neg_sig) == 64
+                else f"negative-signature.sig must be 64 raw bytes, got {len(neg_sig)}",
+            )
+            neg_b64 = expected.get("negative_signature_b64")
+            if isinstance(neg_b64, str):
+                record(
+                    "neg-sig:b64-consistency",
+                    base64.b64encode(neg_sig).decode("ascii") == neg_b64,
+                    "negative-signature.sig bytes match negative_signature_b64"
+                    if base64.b64encode(neg_sig).decode("ascii") == neg_b64
+                    else "negative_signature_b64 disagrees with negative-signature.sig",
+                )
+            record(
+                "neg-sig:invalid-on-canonical",
+                not _verify_ed25519_raw(pub_bytes, neg_sig, canonical),
+                "negative signature correctly INVALID over the negzero canonical bytes",
+            )
+            record(
+                "neg-sig:invalid-on-confusion-string-as-number",
+                not _verify_ed25519_raw(pub_bytes, neg_sig, confusion_a),
+                "negative signature correctly INVALID over string-as-number confusion",
+            )
+            record(
+                "neg-sig:invalid-on-confusion-types-swapped",
+                not _verify_ed25519_raw(pub_bytes, neg_sig, confusion_b),
+                "negative signature correctly INVALID over types-swapped confusion",
+            )
+            record(
+                "neg-sig:valid-on-rejected-literal",
+                _verify_ed25519_raw(pub_bytes, neg_sig, rejected_bytes),
+                "negative signature VALID only over the rejected literal bytes",
+            )
+    else:
+        # Control case must not carry its own negative-signature file.
+        record(
+            "pluszero:no-negative-signature-file",
+            not neg_sig_path.exists(),
+            "ok" if not neg_sig_path.exists()
+            else "pluszero must not ship a negative-signature.sig (negative evidence lives in negzero/)",
+        )
+
+    # --- Cross-case: distinct preimages => distinct signatures ---
+    sibling_sig = sibling_dir / "signature.sig"
+    if sibling_sig.exists():
+        record(
+            "control:sibling-signature-differs",
+            sibling_sig.read_bytes() != sig_bytes,
+            f"signature differs from {sibling_dir.name}/signature.sig (different canonical preimages: string \"-0\" vs \"0\")"
+            if sibling_sig.read_bytes() != sig_bytes
+            else f"signature unexpectedly identical to {sibling_dir.name}/signature.sig",
+        )
+        # And each positive signature must fail over the other case's
+        # canonical preimage.
+        if sibling_canon_file.exists():
+            record(
+                "control:invalid-on-sibling-canonical",
+                not _verify_ed25519_raw(
+                    pub_bytes, sig_bytes, sibling_canon_file.read_bytes()
+                ),
+                f"this positive signature is INVALID over {sibling_dir.name} canonical preimage",
+            )
+    else:
+        record(
+            "control:sibling-signature-differs", False,
+            f"sibling signature {sibling_sig} not found",
+        )
+
+    return result
+
+
+def find_canonicalization_case_dirs(vectors_dir: Path) -> list[Path]:
+    """Find canonicalization-v1 case dirs (immediate subdirs with expected.json)."""
+    cases = []
+    for entry in sorted(vectors_dir.iterdir()):
+        if entry.is_dir() and not entry.name.startswith(".") and (entry / "expected.json").exists():
+            cases.append(entry)
+    return cases
+
+
+def run_canonicalization_suite(vectors_dir: Path) -> int:
+    """Entry point for a canonicalization-v1 corpus directory."""
+    manifest_path = vectors_dir / "manifest.json"
+    try:
+        manifest = load_json(manifest_path)
+    except Exception as exc:
+        print(f"Error: cannot read manifest.json: {exc}", file=sys.stderr)
+        return 2
+    if manifest.get("version") != CANONICALIZATION_CORPUS_VERSION:
+        print(
+            f"Error: manifest version {manifest.get('version')!r} is not "
+            f"{CANONICALIZATION_CORPUS_VERSION!r}",
+            file=sys.stderr,
+        )
+        return 2
+    if manifest.get("canonicalization") != "JCS (RFC 8785)":
+        print("Error: manifest canonicalization must be 'JCS (RFC 8785)'",
+              file=sys.stderr)
+        return 2
+    if manifest.get("hash_algorithm") != "sha256":
+        print("Error: manifest hash_algorithm must be 'sha256'", file=sys.stderr)
+        return 2
+
+    # Every file under the corpus (except manifest.json itself) must be
+    # pinned, so a third party can detect unlisted/tampered additions.
+    on_disk: set[str] = set()
+    for root, dirs, fnames in os.walk(vectors_dir):
+        dirs[:] = [d for d in dirs if not d.startswith(".")]
+        for fname in sorted(fnames):
+            fpath = Path(root) / fname
+            rel = fpath.relative_to(vectors_dir).as_posix()
+            if rel == "manifest.json":
+                continue
+            on_disk.add(rel)
+    pinned = set(manifest.get("files", {}).keys())
+    unpinned = sorted(on_disk - pinned)
+    phantom = sorted(pinned - on_disk)
+    completeness_errors = [f"unpinned file: {p}" for p in unpinned]
+    completeness_errors += [f"pinned file missing: {p}" for p in phantom]
+
+    # Manifest pins are verified with the same logic as receipt corpora.
+    manifest_ok, manifest_errors = verify_manifest(vectors_dir)
+    manifest_errors = completeness_errors + manifest_errors
+    manifest_ok = manifest_ok and not completeness_errors
+    if not manifest_ok:
+        print("MANIFEST VERIFICATION FAILED:")
+        for err in manifest_errors:
+            print(f"  ✗ {err}")
+        return 1
+    print(f"✓ Manifest verified ({vectors_dir.name}/manifest.json)")
+    print(f"  canonicalization: {manifest.get('canonicalization')}")
+    print(f"  public key:       {manifest.get('public_key_fingerprint')}")
+
+    case_dirs = find_canonicalization_case_dirs(vectors_dir)
+    if not case_dirs:
+        print("No canonicalization case directories with expected.json found",
+              file=sys.stderr)
+        return 1
+
+    all_passed = True
+    total_checks = 0
+    passed_checks = 0
+    for case_dir in case_dirs:
+        result = verify_canonicalization_case(case_dir)
+        rel = case_dir.relative_to(vectors_dir)
+        for _, ok, _ in result["checks"]:
+            total_checks += 1
+            if ok:
+                passed_checks += 1
+        status = "✓ PASS" if result["passed"] else "✗ FAIL"
+        print(f"\n{status}  {rel}")
+        for name, ok, detail in result["checks"]:
+            mark = "✓" if ok else "✗"
+            print(f"         {mark} {name} — {detail}")
+        if not result["passed"]:
+            print(f"         Reason: {result.get('reason', 'unknown')}")
+            all_passed = False
+
+    print(f"\n{'='*60}")
+    print(f"Checks: {passed_checks}/{total_checks} passed")
+    print(f"Cases:  {len(case_dirs)}/{len(case_dirs)} matched expected outcome")
+    if all_passed:
+        print("\n✓ ALL VECTORS PASSED")
+        return 0
+    print("\n✗ SOME VECTORS FAILED")
+    return 1
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -1245,6 +1877,19 @@ def main() -> int:
     if not vectors_dir.is_dir():
         print(f"Error: {vectors_dir} is not a directory", file=sys.stderr)
         return 2
+
+    # Dispatch on the corpus type. canonicalization-v1 uses raw-text numeric
+    # boundary fixtures rather than signed CCS receipts; everything else
+    # (v1.4.0-conformance and earlier) keeps the original receipt flow and
+    # its exact output/exit-code contract.
+    manifest_path = vectors_dir / "manifest.json"
+    if manifest_path.exists():
+        try:
+            top_manifest = load_json(manifest_path)
+            if top_manifest.get("version") == CANONICALIZATION_CORPUS_VERSION:
+                return run_canonicalization_suite(vectors_dir)
+        except Exception:
+            pass  # fall through to the receipt flow, which reports the error
 
     manifest_ok, manifest_errors = verify_manifest(vectors_dir)
     if not manifest_ok:

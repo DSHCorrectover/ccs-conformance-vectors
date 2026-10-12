@@ -1,0 +1,84 @@
+{
+  "case": "negzero",
+  "feature": "RFC8785 integer negative zero (-0 token on the wire) alongside its string form",
+  "input_is_raw_json_text": true,
+  "input_file": "input.json",
+  "input_note": "input.json stores the original wire JSON text as bytes (UTF-8, no BOM, single trailing LF). The trailing LF is not part of any signing preimage; only the canonical JSON bytes listed below are signed.",
+  "canonicalization": "JCS (RFC 8785)",
+  "expected_canonical_utf8": "{\"n\":0,\"s\":\"-0\"}",
+  "expected_canonical_hex": "7b226e223a302c2273223a222d30227d",
+  "expected_canonical_sha256": "157e197979b3c77179009f0861fa10c8ecddc034ab18b4ed06847227f4823287",
+  "signing_algorithm": "Ed25519",
+  "signature_encoding": "raw 64-byte Ed25519 signature in signature.sig",
+  "signature_b64": "4gBXSMBEjnStIq0QCpq0IfAcPZrr/e9wWKzQU52q5sP2wcN+PI1yE5D+bn0tvxKAB+sEEphBdn43yEEZUNDiAw==",
+  "public_key_b64": "ndAkiPndnKQ7hLAMOQBu4BE79y0BM3NA0diA0YDB2cI=",
+  "public_key_fingerprint": "26a02d86f5d0a10f",
+  "expect": "valid-for-rfc8785",
+  "raw_input_sha256": "1aa8c6061a7ee3488f9ef8d63fbbdaace07a2fed2e76f3816409a7575c517069",
+  "wire_literal": "-0",
+  "members": {
+    "n": {
+      "json_type": "number",
+      "wire_token": "-0",
+      "expected_canonical_token": "0",
+      "expected_canonical_member": "\"n\":0",
+      "note": "Numeric member. RFC 8785 serializes the number zero without a sign, so the canonical token is 0 with no leading minus (the integer -0 token canonicalises to 0)."
+    },
+    "s": {
+      "json_type": "string",
+      "wire_token": "\"-0\"",
+      "expected_canonical_token": "\"-0\"",
+      "expected_canonical_member": "\"s\":\"-0\"",
+      "note": "String member carried as a separate member to distinguish a numeric value from its string form. RFC 8785 serializes JSON strings verbatim (with quotes, after the RFC 8785 string escaping rules); the content is never numerically normalized, so \"-0\" stays a quoted string and must not become the number 0 or lose its minus sign."
+    }
+  },
+  "member_order_note": "RFC 8785 serializes object members in lexicographic key order; \"n\" precedes \"s\".",
+  "rejected_literal": {
+    "file": "rejected-literal.json",
+    "utf8": "{\"n\":-0,\"s\":\"-0\"}",
+    "hex": "7b226e223a2d302c2273223a222d30227d",
+    "sha256": "dc67e8bd73223949d550892a03ff5f44aec87a9adff54105af914194ce2cf02e",
+    "description": "Preimage of a literal-preserving canonicalizer that keeps the integer -0 token instead of emitting 0. For the negzero case it is byte-identical to the raw wire text (input.json minus its trailing LF): the non-conformant implementation signs the wire literal as if it were the canonical form."
+  },
+  "confusions": [
+    {
+      "file": "confusion-string-as-number.json",
+      "label": "string-member-coerced-to-number",
+      "utf8": "{\"n\":0,\"s\":0}",
+      "hex": "7b226e223a302c2273223a307d",
+      "sha256": "cfbad07b1e2b53a78a1ba66bb31fa4fb5054786defae4f0adcdb329dd15bbb03",
+      "description": "Preimage of a canonicalizer that treats the string member as a number: the quotes are dropped and \"s\" is serialised as 0. A numeric value is conflated with its string form."
+    },
+    {
+      "file": "confusion-types-swapped.json",
+      "label": "numeric-string-types-swapped",
+      "utf8": "{\"n\":\"-0\",\"s\":-0}",
+      "hex": "7b226e223a222d30222c2273223a2d307d",
+      "sha256": "d884405a99c4d7c4ff9ba2424f6e05b3999f48a9ffcb9b36b9dafbd41cd07e44",
+      "description": "Preimage of a canonicalizer that swaps the value types of the two members: \"n\" carries the string \"-0\" and \"s\" carries the numeric -0 token."
+    }
+  ],
+  "negative_signature_encoding": "raw 64-byte Ed25519 signature over the rejected literal bytes in negative-signature.sig",
+  "negative_signature_b64": "WwuYX9NFHgnZ/GBzBSDloDEoLS12tP7ZcSvKKmSWktv2vtm/Sxuf0V2jgdLmQpjLrHsHpNlUMOH0yV3p8V8jCA==",
+  "distinct_from_case": {
+    "case": "pluszero",
+    "canonical_differs": true,
+    "signature_differs": true,
+    "note": "pluszero signs {\"n\":0,\"s\":\"0\"}; its canonical preimage and signature.sig are different bytes from this case."
+  },
+  "conformance_rule": "RFC 8785 serializes negative zero as '0', keeps JSON strings verbatim, and orders members lexicographically. A canonicalizer that preserves the integer '-0' literal and signs {\"n\":-0,\"s\":\"-0\"}, that coerces the string member to a number and signs {\"n\":0,\"s\":0}, or that swaps the member types and signs {\"n\":\"-0\",\"s\":-0}, is non-conformant: signature.sig fails verification over every such preimage.",
+  "checker_assertions": [
+    "raw wire text carries separate numeric member n (token -0) and string member s (token \"-0\")",
+    "json.loads normalizes integer -0 to int 0 while leaving the string \"-0\" a str",
+    "JCS(input.json raw text) == expected_canonical_hex (7b226e223a302c2273223a222d30227d)",
+    "per-member canonical forms: \"n\":0 (number) and \"s\":\"-0\" (string, quoted verbatim)",
+    "Ed25519 verify(pubkey, signature.sig, canonical) == VALID",
+    "Ed25519 verify(pubkey, signature.sig, rejected literal {\"n\":-0,\"s\":\"-0\"}) == INVALID",
+    "Ed25519 verify(pubkey, signature.sig, confusion {\"n\":0,\"s\":0}) == INVALID",
+    "Ed25519 verify(pubkey, signature.sig, confusion {\"n\":\"-0\",\"s\":-0}) == INVALID",
+    "Ed25519 verify(pubkey, negative-signature.sig, canonical) == INVALID",
+    "Ed25519 verify(pubkey, negative-signature.sig, both confusion preimages) == INVALID",
+    "Ed25519 verify(pubkey, negative-signature.sig, rejected literal) == VALID",
+    "signature.sig differs from ../pluszero/signature.sig (different canonical preimages)"
+  ]
+}

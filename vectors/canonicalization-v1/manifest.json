@@ -1,0 +1,30 @@
+{
+  "version": "canonicalization-v1",
+  "generated_by": "scripts/generate_canonicalization_vectors.py",
+  "canonicalization": "JCS (RFC 8785)",
+  "hash_algorithm": "sha256",
+  "seed": "ccs-conformance-vectors/v1/independent-checker",
+  "public_key_b64": "ndAkiPndnKQ7hLAMOQBu4BE79y0BM3NA0diA0YDB2cI=",
+  "public_key_fingerprint": "26a02d86f5d0a10f",
+  "signing_algorithm": "Ed25519",
+  "signature_encoding": "raw 64-byte Ed25519 in signature.sig files",
+  "determinism": "All inputs, canonical bytes, signatures and pins are produced deterministically; re-running the generator yields identical file bytes.",
+  "files": {
+    "README.md": "bc6077dfe8c8083683a663076fc7eb614a785e6b9b306cf00a167113d023649e",
+    "negzero/README.md": "ffce8d7d709d42334ee928484397c665350f4ad0c34b6144edbebfe730f0c0df",
+    "negzero/canonical.jcs": "157e197979b3c77179009f0861fa10c8ecddc034ab18b4ed06847227f4823287",
+    "negzero/confusion-string-as-number.json": "cfbad07b1e2b53a78a1ba66bb31fa4fb5054786defae4f0adcdb329dd15bbb03",
+    "negzero/confusion-types-swapped.json": "d884405a99c4d7c4ff9ba2424f6e05b3999f48a9ffcb9b36b9dafbd41cd07e44",
+    "negzero/expected.json": "13b9551930693da9a6a4503afe56ff66a7ddeb2a781e3795f9c2c88c9e32b644",
+    "negzero/input.json": "1aa8c6061a7ee3488f9ef8d63fbbdaace07a2fed2e76f3816409a7575c517069",
+    "negzero/negative-signature.sig": "b82323efc0fccd66162fa96a852210621f9edfcd757a793450806f806dc2517a",
+    "negzero/rejected-literal.json": "dc67e8bd73223949d550892a03ff5f44aec87a9adff54105af914194ce2cf02e",
+    "negzero/signature.sig": "239b530ce7aebb187ca669cdcecd78742c146503caa5a05051117456f2e0d7aa",
+    "pluszero/README.md": "1ec4b626c42916a5181c26a3075999643b174b0150809f1c4518aba2686d15b5",
+    "pluszero/canonical.jcs": "102a43f82ed1d7af790bbf72da81e7fe280875ed2b2e83e1d4952a6a24e58f00",
+    "pluszero/confusion-string-as-number.json": "cfbad07b1e2b53a78a1ba66bb31fa4fb5054786defae4f0adcdb329dd15bbb03",
+    "pluszero/expected.json": "9a71f0365ce98c1fb33e1c40bc2c9101175ff583d04792729fd8b5600a8c072e",
+    "pluszero/input.json": "9dd85d4aa4cbb4a58682a11ee7d6d9054d6ed951224b7aac4d4cf014331e7ad2",
+    "pluszero/signature.sig": "8f491b75dbbe28571507a65760d2710beeb942088ffdd80a8a85c3a117fe5d80"
+  }
+}
