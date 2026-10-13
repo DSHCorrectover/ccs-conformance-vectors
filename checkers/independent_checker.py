@@ -742,7 +742,16 @@ def verify_manifest(vectors_dir: Path) -> tuple[bool, list[str]]:
         return False, ["manifest.json not found"]
     manifest = load_json(manifest_path)
     errors: list[str] = []
-    for rel_path, expected_hash in manifest.get("files", {}).items():
+    pinned = manifest.get("files", {})
+    if not isinstance(pinned, dict):
+        # Legacy list-of-entries manifests (e.g. vectors/v1.3.0) carry
+        # {"path", "sha256"} records rather than a path->digest map.
+        if isinstance(pinned, list) and all(isinstance(e, dict) for e in pinned):
+            pinned = {e["path"]: e["sha256"] for e in pinned}
+        else:
+            return False, ["manifest 'files' is neither a path->digest map nor a list of {path, sha256} entries"]
+    # Forward direction: every pinned member exists and matches its digest.
+    for rel_path, expected_hash in pinned.items():
         fpath = vectors_dir / rel_path
         if not fpath.exists():
             errors.append(f"missing file: {rel_path}")
@@ -752,7 +761,57 @@ def verify_manifest(vectors_dir: Path) -> tuple[bool, list[str]]:
             errors.append(
                 f"hash mismatch: {rel_path} (expected {expected_hash[:16]}..., got {actual[:16]}...)"
             )
+    # Reverse direction: the manifest is a closed inventory. A file present on
+    # disk but absent from the manifest is outside the admitted population and
+    # must be refused, never silently covered by what the tooling happened to
+    # print. manifest.json itself and dotfiles are outside the boundary.
+    pinned_set = {str(r).replace("\\", "/") for r in pinned.keys()}
+    on_disk: set[str] = set()
+    for root, dirnames, filenames in os.walk(vectors_dir):
+        dirnames[:] = sorted(d for d in dirnames if not d.startswith("."))
+        for fname in sorted(filenames):
+            if fname.startswith("."):
+                continue
+            rel = (Path(root) / fname).relative_to(vectors_dir).as_posix()
+            if rel == "manifest.json":
+                continue
+            on_disk.add(rel)
+    for unpinned in sorted(on_disk - pinned_set):
+        errors.append(f"file on disk but absent from manifest: {unpinned}")
     return (len(errors) == 0, errors)
+
+
+def count_pinned_cases(pinned: dict) -> int:
+    """Independently derive the admitted case population from the closed manifest.
+
+    A case is any pinned directory containing a pinned expected.json; the
+    count comes from the manifest bytes, never from what the run discovered.
+    """
+    case_dirs = {
+        str(Path(p).parent).replace("\\", "/")
+        for p in pinned
+        if p.replace("\\", "/").endswith("/expected.json")
+    }
+    return len(case_dirs)
+
+
+def count_pinned_receipts(pinned: dict) -> int:
+    """Independently count runnable pinned receipts.
+
+    Only receipts sitting in a directory that carries expected.json are part
+    of the admitted run population. Pinned reference material in auxiliary
+    subdirectories (e.g. an ``original/`` tamper baseline) is byte-protected by
+    the manifest but is not itself a run target.
+    """
+    count = 0
+    for p in pinned:
+        norm = p.replace("\\", "/")
+        parent = Path(norm).parent
+        if not re.fullmatch(r"receipt[^/]*\.json", Path(norm).name):
+            continue
+        if str((parent / "expected.json")).replace("\\", "/") in pinned:
+            count += 1
+    return count
 
 
 # ---------------------------------------------------------------------------
@@ -1824,8 +1883,11 @@ def run_canonicalization_suite(vectors_dir: Path) -> int:
     all_passed = True
     total_checks = 0
     passed_checks = 0
+    matched_cases = 0
     for case_dir in case_dirs:
         result = verify_canonicalization_case(case_dir)
+        if result["passed"]:
+            matched_cases += 1
         rel = case_dir.relative_to(vectors_dir)
         for _, ok, _ in result["checks"]:
             total_checks += 1
@@ -1840,9 +1902,20 @@ def run_canonicalization_suite(vectors_dir: Path) -> int:
             print(f"         Reason: {result.get('reason', 'unknown')}")
             all_passed = False
 
+    # Footer totals are recomputed independently from the closed manifest, so
+    # a dropped case can never be hidden by comparing a count against itself.
+    pinned_map = manifest.get("files", {})
+    expected_cases = count_pinned_cases(pinned_map)
     print(f"\n{'='*60}")
     print(f"Checks: {passed_checks}/{total_checks} passed")
-    print(f"Cases:  {len(case_dirs)}/{len(case_dirs)} matched expected outcome")
+    print(f"Cases:  {matched_cases}/{expected_cases} matched expected outcome")
+    if len(case_dirs) != expected_cases:
+        print(
+            f"POPULATION MISMATCH: discovered {len(case_dirs)} case dirs, "
+            f"manifest admits {expected_cases}",
+            file=sys.stderr,
+        )
+        all_passed = False
     if all_passed:
         print("\n✓ ALL VECTORS PASSED")
         return 0
@@ -1907,10 +1980,15 @@ def main() -> int:
     all_passed = True
     total_checks = 0
     passed_checks = 0
+    matched_cases = 0
+    discovered_receipts = 0
 
     for case_dir in case_dirs:
         result = verify_case(case_dir)
         rel = case_dir.relative_to(vectors_dir)
+        if result["passed"]:
+            matched_cases += 1
+        discovered_receipts += len(result.get("receipts", []))
 
         for rr in result.get("receipts", []):
             for _, cp, _ in rr.get("checks", []):
@@ -1933,9 +2011,32 @@ def main() -> int:
             for fc in failed:
                 print(f"         ✗ {rr['receipt']}: {fc[0]} — {fc[2]}")
 
+    # Footer totals are independently recomputed from the closed manifest: the
+    # admitted case and receipt populations come from manifest bytes, not from
+    # whatever the run happened to discover (Lars's self-proving-total note).
+    top_pinned = top_manifest.get("files", {})
+    if isinstance(top_pinned, list):
+        top_pinned = {e["path"]: e["sha256"] for e in top_pinned}
+    expected_cases = count_pinned_cases(top_pinned)
+    expected_receipts = count_pinned_receipts(top_pinned)
     print(f"\n{'='*60}")
     print(f"Checks: {passed_checks}/{total_checks} passed")
-    print(f"Cases:  {len(case_dirs)}/{len(case_dirs)} matched expected outcome")
+    print(f"Cases:  {matched_cases}/{expected_cases} matched expected outcome")
+    print(f"Receipts verified: {discovered_receipts}/{expected_receipts} admitted by manifest")
+    if len(case_dirs) != expected_cases:
+        print(
+            f"POPULATION MISMATCH: discovered {len(case_dirs)} case dirs, "
+            f"manifest admits {expected_cases}",
+            file=sys.stderr,
+        )
+        all_passed = False
+    if discovered_receipts != expected_receipts:
+        print(
+            f"POPULATION MISMATCH: verified {discovered_receipts} receipts, "
+            f"manifest admits {expected_receipts}",
+            file=sys.stderr,
+        )
+        all_passed = False
 
     if all_passed:
         print("\n✓ ALL VECTORS PASSED")
