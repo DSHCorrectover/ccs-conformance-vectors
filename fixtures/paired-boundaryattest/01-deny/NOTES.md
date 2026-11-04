@@ -53,15 +53,49 @@ Nothing here is normalized away.
    reason-code field in CCS L1. If BoundaryAttest lacks one too, this is a
    mutual gap worth noting for the interop profile.
 
-## Open questions for the BoundaryAttest side
-
-- Does the BoundaryAttest receipt expose an independent `event_digest` over the
-  neutral event bytes, or only action/args digests?
-- How does BoundaryAttest encode freshness/expiry (the CCS side commits to
-  `issued_at` / `expires_at` / `max_clock_skew` inside the signed receipt)?
-
 ## Rule for adding findings
 
 Every MISMATCH/N/A row in `crosswalk.json` must have a corresponding entry
 here explaining the semantic difference. Crosswalk rows without an explanation
 block the fixture from being called complete.
+
+## BoundaryAttest-side result
+
+The BoundaryAttest-native receipt is now present. The generated crosswalk has
+10 PASS, 1 MISMATCH, 1 N/A, and 0 PENDING rows. The native BoundaryAttest
+verifier independently confirms the strict v0.1 envelope, expected-key
+fingerprint, Ed25519 signature, neutral-event bindings, and denial/not-executed
+semantics.
+
+The preliminary run reported 9 PASS, 2 MISMATCH, and 1 N/A. Targeted harness
+fixes removed two false mismatches (`executed` and `signature_algorithm`) and
+turned the unconditional `action_ref` PASS into the genuine mismatch below.
+This is improved comparison accuracy, not normalization toward a greener
+result.
+
+The two non-PASS rows are intentional interoperability findings, not receipt
+defects:
+
+1. **`action_ref` — MISMATCH (deliberate claim-scope difference).** Both
+   receipts describe the same shared neutral event and identify `shell.exec`,
+   but they bind different action-level semantics. CCS represents the
+   consequential operation being gated or executed as `shell.exec.execute`.
+   BoundaryAttest represents the admission-decision evidence export as
+   `shell.exec.admission_decision`. The crosswalk compares those native values
+   and does not normalize them into equality. This is a deliberate difference
+   in claim scope, not an implementation defect.
+
+2. **`signer_key_fingerprint` — N/A (intentional claim-scope and identity
+   difference).** CCS exposes its signer as `public_key_fingerprint` while
+   BoundaryAttest exposes an SPKI-DER SHA-256 `public_key_id`. Both references
+   are present and independently verified, but the receipts deliberately use
+   different signing keys and identifier formats. Equality is therefore not a
+   meaningful interoperability requirement. N/A records that this comparison
+   is intentionally non-applicable; it does not mean either receipt omitted
+   its signer reference.
+
+The corrected PASS rows are mechanically checked: `claim.executed: false`
+matches the CCS response body committed by `response_hash`; BoundaryAttest's
+normative v0.1 Ed25519 algorithm matches CCS's explicit algorithm; RFC 3339 and
+epoch decision times resolve to the same instant; and both signed artifacts
+bind the same structured denial reason code.

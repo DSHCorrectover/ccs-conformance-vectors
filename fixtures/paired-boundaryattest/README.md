@@ -18,6 +18,14 @@ between [BoundaryAttest](https://github.com/cullenmeyers/BoundaryAttest) and CCS
 - Mismatches are **deliverables**: where similarly-named fields bind
   differently, we document it in `NOTES.md` rather than forcing compatibility.
 
+## BoundaryAttest compatibility scope
+
+This historical paired fixture intentionally exercises BoundaryAttest Interop
+Profile v0.1 and its stableJson canonicalization. Profile v0.1 is frozen for
+legacy verification. New BoundaryAttest external integrations target Interop
+Profile v0.2; completing this fixture does not make v0.1 the recommended
+profile for new integrations.
+
 ## Layout
 
 ```
@@ -35,7 +43,11 @@ paired-boundaryattest/
       response-body.json
       expected.json
     boundaryattest-side/      # BoundaryAttest-native artifacts (owner: @cullenmeyers)
-      README.md               # what to drop here
+      README.md               # reproduction, key warning, and claim semantics
+      build_boundaryattest_receipt.py
+      verify_boundaryattest_receipt.py
+      receipt.json
+      public-key.pem
     crosswalk.py              # field-level PASS / MISMATCH / N/A / PENDING harness
     crosswalk.json            # generated
     NOTES.md                  # documented semantic mismatches & scope differences
@@ -56,7 +68,12 @@ cd 01-deny/ccs-side
 python3 build_ccs_receipt.py
 python3 verify_ccs_receipt.py      # 22/22 checks
 
-# Crosswalk (PENDING until the BoundaryAttest receipt lands)
+# BoundaryAttest side
+cd ../boundaryattest-side
+python3 build_boundaryattest_receipt.py
+python3 verify_boundaryattest_receipt.py  # 13/13 checks
+
+# Crosswalk
 cd ..
 python3 crosswalk.py
 ```
@@ -70,5 +87,6 @@ be reused outside this directory.
 - [x] Neutral `event.json` + event spec
 - [x] CCS-native receipt + independent verifier (22/22 checks)
 - [x] Crosswalk harness (12 semantic rows)
-- [ ] BoundaryAttest-native receipt (waiting on @cullenmeyers, per issue #1)
-- [ ] Crosswalk run with both receipts; NOTES.md finalized
+- [x] BoundaryAttest-native receipt + independent verifier (13/13 checks)
+- [x] Crosswalk run with both receipts; NOTES.md finalized (10 PASS, 1 MISMATCH,
+  1 N/A, 0 PENDING)
