@@ -10,3 +10,7 @@ Six deterministic cases (C1-C6) for the IICP x CCS interop pilot (see Roble Mumi
 
 Verify: python verify_pilot.py fixtures/case-C1-receipt.json
 CC0 for vectors. Test-only key — not a production trust anchor.
+
+## Classification note (2026-11-05)
+
+This is a **pilot fixture set** with its own offline verifier (`verify_pilot.py`): C1–C4/C6 signatures VALID, C5 tampered copy INVALID by design. It is intentionally **not** part of the `independent_checker.py` population — its receipt envelope (embedded `signature_hex`) differs from the checker's case model (`receipt*.json` + `expected.json`). The manifest pins the closed inventory; run `python verify_pilot.py fixtures/case-C1-receipt.json` to verify (exit 0 = valid, 1 = tamper detected).
