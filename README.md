@@ -301,3 +301,17 @@ The root LICENSE of this repository is **CC0 1.0 Universal**. Components and com
 | CCS-authored example files | `examples/ccs/upstream-01-allow.receipt.json`, `examples/ccs/README.md` | **CC0 1.0 Universal** |
 
 Not in this repository: the **ccs-verifier** PyPI reference implementation (package version 1.3.0) is a **separately distributed package** whose metadata declares the **Elastic License 2.0 (ELv2)**. The ELv2 does not apply to any file in this repository, and the conformance checker imports zero production `ccs-verifier` code. This separation lets independent implementations use the test vectors and checker without ELv2 restrictions. The legacy `verify_v131.py` script for the v1.3.1 vectors does import the `ccs-verifier` 1.3.0 package at runtime; it is an optional standalone script, and the v1.4 conformance checker package imports no `ccs-verifier` code.
+
+---
+
+## Independent verification (external)
+
+**Steven Zhao (赵兴华)** — Beijing. GitHub: [zhaoxinghua09-cell](https://github.com/zhaoxinghua09-cell) · ORCID [0009-0001-0512-1237](https://orcid.org/0009-0001-0512-1237). No affiliation with Correctover or MolTrust (self-declared, in writing, 2026-11-05). Re-run prepared with AI assistance (disclosed by the author).
+
+What was independently done and verified:
+
+1. **Issue [#2](https://github.com/DSHCorrectover/ccs-conformance-vectors/issues/2)** (2026-10-11): reported a self-certifying summary line in `checkers/independent_checker.py` (`Cases: len/len` — numerator equals denominator, always printed a full match). Genuine bug; fixed in commit `c848fae` (2026-10-13): the manifest is now verified in both directions and footer totals are recomputed from the manifest.
+2. **Independent re-run** of the public corpus at `effff90` and at `main` (`cb88218`), on Windows PowerShell and with a clean `core.autocrlf=false` clone. Run records: [zhaoxinghua09-cell/ccs-independent-rerun](https://github.com/zhaoxinghua09-cell/ccs-independent-rerun) (ATTESTATION + per-file SHA-256 manifest).
+3. **Reproduced by Correctover** (2026-11-05, Linux, independent clone): `v1.4.0-conformance` → `Checks: 1477/1549 passed`, `Cases: 66/66 matched expected outcome`, `Receipts verified: 73/73`, `ALL VECTORS PASSED` — identical to the external run record, on both commits.
+
+Disclosure notes: the re-run was prepared with AI assistance (disclosed by the author). The listing above is a statement about the verification artifacts only; it is not an endorsement of, or affiliation with, any other project or initiative by the verifier.
