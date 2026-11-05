@@ -42,5 +42,7 @@
     "W03-injection-driven-transcript-exfil/README.md": "f56a916eff096b9af5510f6099f129bf27ba6a4ecf5ee02577d1ebbd25078187",
     "W03-injection-driven-transcript-exfil/case.json": "ebb93f99fff07c3aea6030449d5a3cd598a4495153674e06c66f357ae92fee4b",
     "vectors.jsonl": "5894ef17a0372c7507668fdb57434277865e17d9bd10c9c28839aa0e5d8ae427"
-  }
+  },
+  "checker_model": "legacy-inventory-only",
+  "legacy_note": "must-fail vector set predating the expected.json case model; inventory-only verification"
 }

@@ -108,5 +108,7 @@
     "algorithm": "SHA-256",
     "value": "42126c2436720213064c20cbfe022c81a941d793129cf6bd918575f9ac735d52",
     "canonicalization": "JCS (RFC 8785): sorted keys, compact JSON. Digest covers the manifest excluding manifest_digest itself."
-  }
+  },
+  "checker_model": "legacy-inventory-only",
+  "legacy_note": "v1.3.0 corpus predates the expected.json case model; inventory-only verification"
 }

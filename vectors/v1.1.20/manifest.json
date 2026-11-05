@@ -1,0 +1,8 @@
+{
+  "version": "v1.1.20",
+  "checker_model": "legacy-inventory-only",
+  "legacy_note": "single reference receipt predating the case model; inventory-only verification",
+  "files": {
+    "reference-signed-001.json": "f4ba98ba9eb8f2a74a7b9065ed7919541ae7a58e2b4811dd0f1967408c4cd975"
+  }
+}

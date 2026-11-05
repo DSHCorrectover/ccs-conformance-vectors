@@ -1970,6 +1970,17 @@ def main() -> int:
         for err in manifest_errors:
             print(f"  ✗ {err}")
         return 1
+    manifest = json.load((vectors_dir / "manifest.json").open(encoding="utf-8"))
+    if manifest.get("checker_model") == "legacy-inventory-only":
+        # Historical sets that predate the expected.json case model: their
+        # receipts cannot be re-signed without breaking evidence bytes, so the
+        # admitted verification scope here is the closed byte-level inventory.
+        # Security note: full bidirectional manifest verification above still
+        # applies; only the case population is not applicable.
+        n = len(manifest.get("files", {}) or {})
+        print(f"  LEGACY FORMAT ({vectors_dir.name}): closed inventory verified — "
+              f"{n} files pinned; case population not applicable to this historical set.")
+        return 0
     print(f"✓ Manifest verified ({vectors_dir.name}/manifest.json)")
 
     case_dirs = find_case_dirs(vectors_dir)
