@@ -279,7 +279,10 @@ is available at <https://dshcorrectover.github.io/agent-audit/scan.html>.
 
 The seven-dimension admission model is described in the CCS specification work
 referenced here as **draft-correctover-ccs-09** — an **individual submission,
-not an RFC and not an IETF endorsement**. The benchmark is citable via Zenodo
+not an RFC and not an IETF endorsement**. Note on provenance: the
+`vectors/mustfail-v1` set was generated against **draft-correctover-ccs-08**
+semantics (declared per-vector in `vectors.jsonl`); treat `vectors.jsonl` as the
+authoritative per-vector provenance. The benchmark is citable via Zenodo
 DOI [10.5281/zenodo.21783723](https://doi.org/10.5281/zenodo.21783723).
 
 ## Contributing
