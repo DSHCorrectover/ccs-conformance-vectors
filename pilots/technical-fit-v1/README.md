@@ -4,7 +4,7 @@ Six deterministic cases (C1-C6) for the IICP x CCS interop pilot (see Roble Mumi
 
 - fixtures/case-C{1..4}-receipt.json : allow/block decisions, signed (Ed25519 over JCS/RFC 8785 canonical bytes)
 - fixtures/case-C5-tampered-receipt.json : MUST-FAIL (payload tampered, signature unchanged)
-- fixtures/case-C6-replay-copy.json : byte-identical copy of C1 (replay detection case)
+- fixtures/case-C6-replay-copy.json : canonical-payload-identical copy of C1 (envelope-only note, outside the signed bytes; replay detection happens at the correlation layer, so verify_pilot.py exits 0 by design)
 - verify_pilot.py : offline verifier (stdlib + cryptography)
 - pilot-public-key.pub.pem : pilot signing key (separate from the 2026-10 evidence trust root)
 
