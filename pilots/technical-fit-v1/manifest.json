@@ -1,16 +1,16 @@
 {
   "version": "technical-fit-v1",
-  "generated_by": "manifest generator (independent_checker schema) — 2026-11-05, Correctover",
-  "description": "IICP x CCS pilot fixtures (C1-C6, signed, offline-verifiable); manifest added to satisfy strict closed-inventory verification introduced in c848fae",
+  "generated_by": "manifest generator (independent_checker schema) \u2014 2026-11-05, Correctover",
+  "description": "IICP x CCS pilot fixtures (C1-C6, signed, offline-verifiable); manifest regenerated 2026-11-07 after external-review fixes (closed inventory, RFC 8785 verifier)",
   "files": {
-    "README.md": "bd0d225d9c2cac1ce7d52803f62e9f4e11263b7b660ba7fe2c9b6cbb23ea053b",
+    "README.md": "d0deb2ec42c2be1a2bd6beec86010d79403195defc5ba95144c9ba6b8577a72e",
+    "verify_pilot.py": "f0634bde7a799f0c075394a712d287701c9ea42b913770057d0e451114e37100",
+    "pilot-public-key.pub.pem": "4aacf12b73697d724df62696289747d65bf967221057a59585a2094285308700",
     "fixtures/case-C1-receipt.json": "11a3fa80476a14fcad9645b89d507534b0afcd634f879cdebcf4f3b5496dfb3f",
     "fixtures/case-C2-receipt.json": "3060b7cf07815bba330f2d50fd65ffc5a27c68377d995d5529e5be48d5237710",
     "fixtures/case-C3-receipt.json": "726de62a65fbcbea927e176ef163226fe78effa993b63d0abba873550f838f80",
     "fixtures/case-C4-receipt.json": "981b8ecb1f0aba55de851c99055c2ff55411630f143769f5544c0c51945c8acb",
     "fixtures/case-C5-tampered-receipt.json": "b1a1d7539074f7fd697790bfdb0a1d68415a6ad879b53305af1dc3bc021084bf",
-    "fixtures/case-C6-replay-copy.json": "683b98ae72456fcb23f8f7c88f267b2542a40960d04ceef4ff8e336597731945",
-    "pilot-public-key.pub.pem": "4aacf12b73697d724df62696289747d65bf967221057a59585a2094285308700",
-    "verify_pilot.py": "6bb45f737f2129a4a48673ae9a948f3d0d21ec69031bd23b9e21fcc26763890e"
+    "fixtures/case-C6-replay-copy.json": "683b98ae72456fcb23f8f7c88f267b2542a40960d04ceef4ff8e336597731945"
   }
 }

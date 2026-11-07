@@ -227,6 +227,21 @@ python scripts/generate_vectors.py
 The generator uses fixed values for all timestamps, IDs, and nonces, producing
 byte-identical output across runs.
 
+### Determinism & hash-input serialization (declared 2026-11-07)
+
+- The checker and generators iterate directories and build all output in
+  **sorted order**; stdout is independent of `PYTHONHASHSEED` (verified over
+  seeds 0–15, byte-identical output).
+- Manifest digests are SHA-256 over **raw file bytes**. Payload digest /
+  canonical-byte references are **JCS (RFC 8785)**. Any hash over a structured
+  object or array (e.g. custody-style array hashes in external evidence packs)
+  MUST be published together with the serialization it is computed over;
+  undeclared serializations are treated as unverifiable (fail-closed).
+- External-review fixes shipped 2026-11-07: the checker now also verifies the
+  detached `signature.sig` shipped with each case (byte-match against the
+  embedded signature + independent Ed25519 verification over the signed
+  preimage), closing the gap where a corrupted detached file went unnoticed.
+
 ### Licensing
 
 - Vector files: **CC0 1.0** (public domain, same as repository)

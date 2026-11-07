@@ -862,6 +862,73 @@ def verify_receipt(receipt_path: Path, case_dir: Path) -> dict:
         return _verify_l1_receipt(receipt, receipt_path, case_dir, result)
 
 
+def _verify_detached_signature(receipt, receipt_path, case_dir, result):
+    """Detached-companion verification (2026-11-07).
+
+    External review (Lars, MoltyCel — 2026-10 run + 2026-11-07 email) showed the
+    checker never opens the detached ``signature.sig`` file shipped with each
+    case: a corrupted or replaced detached file went unnoticed as long as the
+    embedded ``receipt.json`` signature field verified. Two checks close this:
+
+    1. ``signature:detached-file-match`` — the detached file must be
+       byte-identical to the embedded signature (they attest the same bytes).
+    2. ``signature:detached-valid-on-preimage`` — the detached file must verify
+       under the receipt public key over JCS(payload minus signature), i.e. the
+       same preimage the embedded signature attests.
+
+    Skipped (no check emitted) when the case ships no ``signature.sig``, or the
+    receipt lacks the embedded signature/public key fields (structural checks
+    already flag those). Applies to L1 and L2 receipts alike.
+    """
+    sig_path = case_dir / "signature.sig"
+    if not sig_path.is_file():
+        return
+    if not isinstance(receipt, dict):
+        return
+    if "signature" not in receipt or "public_key" not in receipt:
+        # Structural checks already flag the missing fields; nothing to compare.
+        return
+    detached_ok = True
+    try:
+        file_bytes = sig_path.read_bytes()
+        embedded = b64decode_strict(receipt["signature"])
+        match = file_bytes == embedded
+        detail = (
+            "signature.sig matches embedded signature"
+            if match
+            else (
+                f"signature.sig ({len(file_bytes)} bytes) != embedded "
+                f"signature ({len(embedded)} bytes)"
+            )
+        )
+    except Exception as exc:
+        file_bytes = None
+        match = False
+        detail = f"signature.sig/embedded decode error: {exc}"
+    result["checks"].append(("signature:detached-file-match", match, detail))
+    detached_ok = detached_ok and match
+    if match and file_bytes is not None:
+        pre_ok, pre_detail = verify_ed25519(
+            receipt["public_key"],
+            receipt,
+            base64.b64encode(file_bytes).decode("ascii"),
+        )
+        result["checks"].append(
+            (
+                "signature:detached-valid-on-preimage",
+                pre_ok,
+                pre_detail
+                if pre_ok
+                else f"signature.sig fails verification over signed preimage: {pre_detail}",
+            )
+        )
+        detached_ok = detached_ok and pre_ok
+    if not detached_ok:
+        result["passed"] = False
+        if result["reason"] is None:
+            result["reason"] = "detached signature file inconsistent"
+
+
 def _verify_l1_receipt(receipt, receipt_path, case_dir, result):
     # Structural
     struct = validate_l1_structure(receipt)
@@ -893,6 +960,8 @@ def _verify_l1_receipt(receipt, receipt_path, case_dir, result):
         result["reason"] = sem_failed[0][2]
     elif sem_failed:
         result["passed"] = False
+
+    _verify_detached_signature(receipt, receipt_path, case_dir, result)
 
     return result
 
@@ -935,6 +1004,8 @@ def _verify_l2_receipt(receipt, receipt_path, case_dir, result):
         result["reason"] = sem_failed[0][2]
     elif sem_failed:
         result["passed"] = False
+
+    _verify_detached_signature(receipt, receipt_path, case_dir, result)
 
     return result
 
@@ -1057,7 +1128,9 @@ def validate_chain(case_dir: Path, receipt_results: list[dict]) -> list[tuple[st
     checks.append((
         "chain:trace-id-consistent",
         len(trace_ids) == 1,
-        "ok" if len(trace_ids) == 1 else f"trace_ids differ: {trace_ids}",
+        # sorted(): set rendering order is PYTHONHASHSEED-dependent —
+        # stdout must be deterministic (2026-11-07 determinism fix)
+        "ok" if len(trace_ids) == 1 else f"trace_ids differ: {sorted(trace_ids)}",
     ))
 
     # 2. Nonce uniqueness
