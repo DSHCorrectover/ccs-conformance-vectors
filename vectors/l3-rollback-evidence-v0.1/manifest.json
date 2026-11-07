@@ -1,0 +1,26 @@
+{
+  "version": "l3-rollback-evidence-v0.1",
+  "generated_by": "generate_l3_rollback_vectors.py \u2014 2026-11-07, Correctover",
+  "description": "Linked rollback-evidence receipt extension (L3-R): binding + fail-closed tx-ref semantics; deterministic key derivation shared with v1.4.0 corpus",
+  "public_key_b64": "ndAkiPndnKQ7hLAMOQBu4BE79y0BM3NA0diA0YDB2cI=",
+  "signing_algorithm": "Ed25519",
+  "canonicalization": "JCS (RFC 8785)",
+  "files": {
+    "01-rollback-valid/expected.json": "b6c022c8b3e65fb90daf99bca68250b17630fc25678a72ba8261f9b6f3666f98",
+    "01-rollback-valid/receipt.json": "c11b9615bb70063621aaaea65f20653d6a956de1eb0bc71cf8635dee3c233c73",
+    "01-rollback-valid/signature.sig": "a68a87df3cf9e39f02071bce6829fe98791ceda1ab1b4c84b3cac0fa52bd7205",
+    "01-rollback-valid/signing-input.jcs": "db144fe5ca9f17f2def663133c3b14bb45e7cdc9013387d9558a66b991a62aab",
+    "01-rollback-valid/target-receipt.json": "131ef93b15754a340e0d68530c266f6fd18abdaa64e6f4140fe7416421ce834b",
+    "02-rollback-unbound/expected.json": "80f3055ef472871fea7b8fa9dbf3de5fcc33397e58530e6b3f638af7f8a741a6",
+    "02-rollback-unbound/receipt.json": "62dc96cae899b193b06081d31631d532e14ec9120e8e3c102ca7c47ce9de04c8",
+    "02-rollback-unbound/signature.sig": "b68dc97001a8e3dd162ef13cb06cd738dd0246665925e6f137b53d65e9899b9d",
+    "02-rollback-unbound/signing-input.jcs": "bdedb6829012394f3a094c9079022f7d6bb6b775c897a35394faa5e29173c31a",
+    "02-rollback-unbound/target-receipt.json": "131ef93b15754a340e0d68530c266f6fd18abdaa64e6f4140fe7416421ce834b",
+    "03-rollback-no-tx-ref/expected.json": "b1bf20ef9da7b7b8aa1bc280d8cff759bde8cb990fc7d87b2e33e1e1c6e4976a",
+    "03-rollback-no-tx-ref/receipt.json": "22cbaf386342a6bf743687e25a3c4c79704f1447adc89efbba00a115ea8a2797",
+    "03-rollback-no-tx-ref/signature.sig": "a9d933071e1aea12da491a50254fbdba64a2bd852e9580a18db090e2c5dd5938",
+    "03-rollback-no-tx-ref/signing-input.jcs": "8b81fc12ac23a3c289548a3ffa541bd4b1f45d391bdf71d8a475fc71b5b2b683",
+    "03-rollback-no-tx-ref/target-receipt.json": "131ef93b15754a340e0d68530c266f6fd18abdaa64e6f4140fe7416421ce834b",
+    "README.md": "bcb42af3577181fb2e0a34c2a33628d22d981022f7629e5f337554c34cdfdc63"
+  }
+}

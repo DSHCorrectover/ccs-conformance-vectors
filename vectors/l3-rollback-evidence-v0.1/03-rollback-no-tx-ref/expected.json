@@ -1,0 +1,4 @@
+{
+  "verdict": "invalid",
+  "reason": "unverifiable rollback claim: executed decision without rollback_tx_ref"
+}

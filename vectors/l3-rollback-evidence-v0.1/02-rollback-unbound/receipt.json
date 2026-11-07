@@ -1,0 +1,18 @@
+{
+  "receipt_type": "ccs.rollback-evidence/0.1",
+  "receipt_version": "0.1",
+  "evidence_type": "rollback-evidence",
+  "target_receipt_ref": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "target_receipt_chain_pos": 1,
+  "rollback_decision": "settled-payment-reversed",
+  "settled_at_original": 1750003260.0,
+  "rollback_tx_ref": "reversal:ch_3Pilot0001_l3r",
+  "operator_id": "operator:conformance-rig",
+  "decision_basis": "policy:refund-window-24h",
+  "timestamp": 1750003320.0,
+  "nonce": "l3r-nonce-0001",
+  "issuer": "conformance-reference-issuer",
+  "audience": "conformance-reference-audience",
+  "public_key": "ndAkiPndnKQ7hLAMOQBu4BE79y0BM3NA0diA0YDB2cI=",
+  "signature": "GvoK7YBfedq0bh2q8e53hy+6BTYluwbQD8ZN7BWaLVwNDGtOR7iHxTQgB1VzklViun/XY7h6iwLUliY6m3/uBw=="
+}

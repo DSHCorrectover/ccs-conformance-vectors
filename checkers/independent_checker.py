@@ -819,8 +819,10 @@ def count_pinned_receipts(pinned: dict) -> int:
 # ---------------------------------------------------------------------------
 
 def detect_receipt_type(receipt: Any) -> str:
-    """Return 'l1', 'l2', or 'unknown'."""
+    """Return 'l3r', 'l2', 'l1', or 'unknown'."""
     if isinstance(receipt, dict):
+        if "receipt_type" in receipt and receipt.get("receipt_type", "").startswith("ccs.rollback-evidence"):
+            return "l3r"
         if "receipt_type" in receipt and receipt.get("receipt_type", "").startswith("ccs.behavior"):
             return "l2"
         if "verdict" in receipt and "tool" in receipt and "latency_us" in receipt:
@@ -856,7 +858,9 @@ def verify_receipt(receipt_path: Path, case_dir: Path) -> dict:
     result["receipt_type"] = rtype
     result["receipt_data"] = receipt
 
-    if rtype == "l2":
+    if rtype == "l3r":
+        return _verify_l3r_receipt(receipt, receipt_path, case_dir, result)
+    elif rtype == "l2":
         return _verify_l2_receipt(receipt, receipt_path, case_dir, result)
     else:
         return _verify_l1_receipt(receipt, receipt_path, case_dir, result)
@@ -927,6 +931,109 @@ def _verify_detached_signature(receipt, receipt_path, case_dir, result):
         result["passed"] = False
         if result["reason"] is None:
             result["reason"] = "detached signature file inconsistent"
+
+
+# ---------------------------------------------------------------------------
+# L3-R rollback-evidence receipts (2026-11-07, extension type)
+# ---------------------------------------------------------------------------
+
+L3R_REQUIRED_FIELDS = (
+    "receipt_type", "receipt_version", "evidence_type",
+    "target_receipt_ref", "target_receipt_chain_pos",
+    "rollback_decision", "settled_at_original",
+    "operator_id", "decision_basis",
+    "timestamp", "nonce", "issuer", "audience",
+    "public_key", "signature",
+)
+
+# optional companion fields (present only when the decision was executed)
+L3R_OPTIONAL_FIELDS = ("rollback_tx_ref",)
+L3R_ALLOWED_FIELDS = frozenset(L3R_REQUIRED_FIELDS) | frozenset(L3R_OPTIONAL_FIELDS)
+
+L3R_DECISIONS_EXECUTED = {
+    "settled-payment-reversed", "settled-payment-partially-reversed",
+    "execution-undone",
+}
+
+
+def _verify_l3r_receipt(receipt, receipt_path, case_dir, result):
+    """Verify a linked rollback-evidence receipt (L3-R).
+
+    Design rules (fusion/ccs-扩展设计-回滚证据与归因标签-20261107):
+    1. Structural: closed field set, all L3R_REQUIRED_FIELDS present.
+    2. Signature: Ed25519 over JCS(payload minus 'signature') — same as L1/L2.
+    3. Target binding: target_receipt_ref must equal
+       'sha256:' + SHA-256(JCS(linked target receipt minus 'signature'))
+       recomputed from the case's target-receipt.json (verdict-to-source
+       binding — the receipt cannot claim to roll back an unbound target).
+    4. Fail-closed rollback claim: a receipt asserting an executed rollback
+       (rollback_decision in L3R_DECISIONS_EXECUTED) MUST carry a non-empty
+       rollback_tx_ref; an executed claim without a verifiable transaction
+       reference is rejected as 'unverifiable rollback claim'.
+    """
+    # Structural
+    missing = [f for f in L3R_REQUIRED_FIELDS if f not in receipt]
+    extra = [f for f in receipt if f not in L3R_ALLOWED_FIELDS]
+    if missing:
+        result["passed"] = False
+        result["reason"] = "missing required field(s): " + ", ".join(sorted(missing))
+        result["checks"].append(("structure:l3r-fields", False, result["reason"]))
+        return result
+    result["checks"].append(("structure:l3r-fields", True,
+                             "all L3-R required fields present" if not extra
+                             else f"all required fields present (extra: {sorted(extra)})"))
+
+    # Signature (same convention as L1/L2)
+    sig_ok, sig_detail = verify_ed25519(
+        receipt["public_key"], receipt, receipt["signature"]
+    )
+    result["checks"].append(("signature:ed25519", sig_ok, sig_detail))
+    if not sig_ok:
+        result["passed"] = False
+        result["reason"] = "signature mismatch"
+
+    # Target binding: recompute the linked target's digest from source bytes
+    target_path = case_dir / "target-receipt.json"
+    if not target_path.is_file():
+        bind_ok, bind_detail = False, "no target-receipt.json in case dir"
+    else:
+        try:
+            target = load_json(target_path)
+            signed_target = {k: v for k, v in target.items() if k != "signature"}
+            computed = "sha256:" + sha256_hex(canonical_json(signed_target))
+            declared = receipt.get("target_receipt_ref")
+            bind_ok = isinstance(declared, str) and declared == computed
+            bind_detail = (
+                "target_receipt_ref matches recomputed linked-target digest"
+                if bind_ok
+                else f"target binding mismatch: declared {str(declared)[:24]}… "
+                     f"computed {computed[:24]}…"
+            )
+        except Exception as exc:
+            bind_ok, bind_detail = False, f"target-receipt.json load error: {exc}"
+    result["checks"].append(("binding:target-receipt-ref", bind_ok, bind_detail))
+    if not bind_ok:
+        result["passed"] = False
+        if result["reason"] is None:
+            result["reason"] = "target receipt binding failed"
+
+    # Fail-closed rollback claim
+    decision = receipt.get("rollback_decision")
+    tx_ref = receipt.get("rollback_tx_ref")
+    if isinstance(decision, str) and decision in L3R_DECISIONS_EXECUTED:
+        if not isinstance(tx_ref, str) or not tx_ref.strip():
+            result["passed"] = False
+            fc_reason = "unverifiable rollback claim: executed decision without rollback_tx_ref"
+            result["reason"] = fc_reason if result["reason"] is None else result["reason"]
+            result["checks"].append(("failclosed:rollback-tx-ref", False, fc_reason))
+        else:
+            result["checks"].append(("failclosed:rollback-tx-ref", True,
+                                     "executed rollback claim carries transaction reference"))
+
+    # Detached companion (same rule as L1/L2)
+    _verify_detached_signature(receipt, receipt_path, case_dir, result)
+
+    return result
 
 
 def _verify_l1_receipt(receipt, receipt_path, case_dir, result):

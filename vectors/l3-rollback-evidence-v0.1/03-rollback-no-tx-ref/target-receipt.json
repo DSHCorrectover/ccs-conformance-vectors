@@ -1,0 +1,41 @@
+{
+  "trace_id": "l3r-target-trace-0001",
+  "receipt_version": "1.4",
+  "verdict": "allow",
+  "timestamp": 1750003200.0,
+  "tool": "payments.refund.execute",
+  "_id": "l3r-target-0001",
+  "params_hash": "sha256:a20b52fae57cc7a99c9651f1b573950fd211823e3ace3bb9c273c06430f24cd3",
+  "args_digest": "090772cf4068973daad3f715eb788d39fe2c02be42efd86de81f0e59198d6237",
+  "rule_summary": "Payment tool call admitted by policy",
+  "rule_version": "conformance-reference-policy",
+  "request_hash": "sha256:1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047",
+  "response_hash": "sha256:a9f4b3d22a523fdada41c85c175425bcd15b32b4cd0f54d9433accd52d7195a1",
+  "runtime_context_hash": "sha256:0230c6b1d833c51cc426492022677b74c60d82891931221a42db9e7bb06205e9",
+  "config_hash": "sha256:b79606fb3afea5bd1609ed40b622142f1c98125abcfe89a76a661b0e8e343910",
+  "verifier_source_class": "ConformanceVectorGenerator",
+  "deployment_mode": "in-process",
+  "issuer": "conformance-reference-issuer",
+  "audience": "conformance-reference-audience",
+  "nonce": "l3r-target-nonce-0001",
+  "policy": {
+    "policy_id": "conformance-reference-policy"
+  },
+  "correlation_id": "5e21b3c4-9f6d-4a7e-8b2a-1c3d5e7f9a01",
+  "public_key": "ndAkiPndnKQ7hLAMOQBu4BE79y0BM3NA0diA0YDB2cI=",
+  "public_key_fingerprint": "26a02d86f5d0a10f",
+  "signing_algorithm": "Ed25519",
+  "issued_at": "2025-06-15T12:00:00Z",
+  "verified_at": "2025-06-15T12:00:00Z",
+  "expires_at": "2025-06-16T12:00:00Z",
+  "max_clock_skew": 30,
+  "latency_us": 420,
+  "sequence": 1,
+  "settlement": {
+    "status": "settled",
+    "settled_at": 1750003260.0,
+    "amount_minor": 12500,
+    "currency": "USD"
+  },
+  "signature": "F8OmoZBMOOGEk+M2Feu+DnNNjn7R9Y2fEal96C1Ep/7FCkNt0d0vg/e1/w18FKbcZktveqb9kOXsVp9nPZKsBA=="
+}

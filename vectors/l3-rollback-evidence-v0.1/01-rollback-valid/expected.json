@@ -1,0 +1,9 @@
+{
+  "verdict": "valid",
+  "checks": [
+    "structure:l3r-fields",
+    "signature:ed25519-valid",
+    "binding:target-receipt-ref-matches",
+    "failclosed:rollback-tx-ref-present"
+  ]
+}
