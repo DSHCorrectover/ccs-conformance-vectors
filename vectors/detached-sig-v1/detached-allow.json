@@ -1,0 +1,22 @@
+{
+  "spec": "correctover-ccs/1.0",
+  "type": "dataset-integrity-receipt",
+  "generated_at": "2026-11-12T22:37:16.015Z",
+  "subject": {
+    "dataset": "npm-weak-entropy-watchlist",
+    "version": "2026-10",
+    "ecosystem": "npm"
+  },
+  "integrity": {
+    "sha256": "f439f1e69517829ed35b0307186802c5f09891f9d4288fbaa44785e26b9c181f",
+    "packages": 512,
+    "scanned": 4555
+  },
+  "verification": {
+    "algorithm": "Ed25519",
+    "public_key_fingerprint": "sha256:34b64b122ae754d371760b3fd18ddff2",
+    "public_key": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAVQ7sAnDNYkavqL9WxKHwjZ7dpZ/EjBdNlAnSGjKUwto=\n-----END PUBLIC KEY-----\n",
+    "how_to_verify": "node verify-receipt.mjs <this-file>  # 或任何 RFC8032 Ed25519 实现"
+  },
+  "signed_payload": "{\"generated_at\":\"2026-11-12T22:37:16.015Z\",\"integrity\":{\"packages\":512,\"scanned\":4555,\"sha256\":\"f439f1e69517829ed35b0307186802c5f09891f9d4288fbaa44785e26b9c181f\"},\"spec\":\"correctover-ccs/1.0\",\"subject\":{\"dataset\":\"npm-weak-entropy-watchlist\",\"ecosystem\":\"npm\",\"version\":\"2026-10\"},\"type\":\"dataset-integrity-receipt\",\"verification\":{\"algorithm\":\"Ed25519\",\"how_to_verify\":\"node verify-receipt.mjs <this-file>  # 或任何 RFC8032 Ed25519 实现\",\"public_key\":\"-----BEGIN PUBLIC KEY-----\\nMCowBQYDK2VwAyEAVQ7sAnDNYkavqL9WxKHwjZ7dpZ/EjBdNlAnSGjKUwto=\\n-----END PUBLIC KEY-----\\n\",\"public_key_fingerprint\":\"sha256:34b64b122ae754d371760b3fd18ddff2\"}}"
+}

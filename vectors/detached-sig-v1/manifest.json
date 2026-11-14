@@ -1,0 +1,41 @@
+{
+  "variant": "detached-sig-v1",
+  "description": "Detached-signature conformance vectors (v1.6.0 verifier). Detached form: receipt JSON omits 'signature'; Ed25519 signature (base64) over the exact signed_payload bytes lives in '<file>.sig' sidecar. Base receipt: npm-weak-entropy-watchlist dataset-integrity receipt (real signature). Expected results are normative: PASS/FAIL/ERROR as listed.",
+  "added": "2026-11-15",
+  "expected_results": {
+    "detached-allow.json": "PASS",
+    "detached-payload-tamper.json": "FAIL",
+    "detached-sig-tamper.json": "FAIL",
+    "detached-missing-sig.json": "ERROR"
+  },
+  "files": {
+    "detached-allow.json": {
+      "sha256": "de98a653b8d6624097ba959f7ff6fcdcf4abebdb686c1d68a398478cf735499e",
+      "bytes": 1463
+    },
+    "detached-allow.json.sig": {
+      "sha256": "573f2b1fd2c62207936f776943214e6dfb51ca68de1fdd3af3676ff51bfedbc9",
+      "bytes": 88
+    },
+    "detached-missing-sig.json": {
+      "sha256": "de98a653b8d6624097ba959f7ff6fcdcf4abebdb686c1d68a398478cf735499e",
+      "bytes": 1463
+    },
+    "detached-payload-tamper.json": {
+      "sha256": "8eb0d235267fb5b3aa9b13b3e4c5958c447e26aacdc3e07630b86ebc440f0948",
+      "bytes": 1463
+    },
+    "detached-payload-tamper.json.sig": {
+      "sha256": "573f2b1fd2c62207936f776943214e6dfb51ca68de1fdd3af3676ff51bfedbc9",
+      "bytes": 88
+    },
+    "detached-sig-tamper.json": {
+      "sha256": "de98a653b8d6624097ba959f7ff6fcdcf4abebdb686c1d68a398478cf735499e",
+      "bytes": 1463
+    },
+    "detached-sig-tamper.json.sig": {
+      "sha256": "03b8970873cc2980da28d30a3fe13f36e2790cbb72f892858c3c7445549233e6",
+      "bytes": 88
+    }
+  }
+}
