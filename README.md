@@ -318,7 +318,7 @@ The root LICENSE of this repository is **CC0 1.0 Universal**. Components and com
 | EMILIA-contributed interoperability artifacts | `examples/ccs/vectors.reference.json`, `examples/ccs/JOINT-ASSESSMENT.md` | **Apache License 2.0** (byte-identical copies from emiliaprotocol/emilia-protocol; full text in `examples/ccs/LICENSE`) |
 | CCS-authored example files | `examples/ccs/upstream-01-allow.receipt.json`, `examples/ccs/README.md` | **CC0 1.0 Universal** |
 
-Not in this repository: the **ccs-verifier** PyPI reference implementation (package version 1.3.0) is a **separately distributed package** whose metadata declares the **Elastic License 2.0 (ELv2)**. The ELv2 does not apply to any file in this repository, and the conformance checker imports zero production `ccs-verifier` code. This separation lets independent implementations use the test vectors and checker without ELv2 restrictions. The legacy `verify_v131.py` script for the v1.3.1 vectors does import the `ccs-verifier` 1.3.0 package at runtime; it is an optional standalone script, and the v1.4 conformance checker package imports no `ccs-verifier` code.
+License layering (updated 2026-11-16): this repository is **CC0**. The **ccs-verifier** PyPI reference implementation is **Apache-2.0 since v1.7.0** (previously ELv2 up to v1.6.x) — the change was made so third parties can independently re-verify verdicts without license friction. The conformance checker imports zero production `ccs-verifier` code; the legacy `verify_v131.py` script imports `ccs-verifier` at runtime and is optional. Engine/hosting components remain source-available (see project strategy v19).
 
 ---
 
