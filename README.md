@@ -1,5 +1,7 @@
 # CCS Conformance Vectors
 
+[**Commercial verification engagements — USD 8,000–15,000, court-ready dossier**](https://dshcorrectover.github.io/correctover-recovery-admission/services.html) · [**Independent audit & conformance**](https://dshcorrectover.github.io/correctover-recovery-admission/services.html)
+
 [![CC](https://img.shields.io/badge/License-CC0%201.0-lightgrey.svg)](LICENSE)
 [![Rekor anchored](https://img.shields.io/badge/Rekor%20anchored-logIndex%202697248662-1455A3)](https://search.sigstore.dev/?logIndex=2697248662)
 
