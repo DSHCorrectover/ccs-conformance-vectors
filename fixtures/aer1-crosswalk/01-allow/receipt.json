@@ -1,0 +1,40 @@
+{
+ "trace_id": "aer1-xwalk-allow-20261118",
+ "receipt_version": "1.4.0",
+ "verdict": "ALLOW",
+ "timestamp": "2026-11-18T13:00:00Z",
+ "tool": {
+  "name": "get_balance",
+  "version": "1.0.0",
+  "scope": "public"
+ },
+ "_id": "623f1c02-f94b-5e37-ad97-3aa79a5f4bec",
+ "params_hash": "2fe80213acca802eaac2fc636ba050956a93dbe5fabc2f684b75dac8be28403f",
+ "args_digest": "14de0ded0ce0e4f63a665f093c3dd875b17c565fa8d299a4002d94e105481213",
+ "rule_summary": "balance read allowed: public-scope tool, no side effects",
+ "rule_version": "1.0",
+ "request_hash": "016cf5cbfbaea37323cbf43ad9e456886d4e5ba752471ad255d29cc53436ec8c",
+ "response_hash": "3c90068aedd90daad9f495d5098c90fadb5c809030574ac8fd75c98804352387",
+ "runtime_context_hash": "5085354bc0cdeb1baf554646b095e590fc699af8429427158ae36fb65f0dac1d",
+ "config_hash": "8c0a56196f3b0fbe099e5b9be0f870faee2b4f7d49a6026f17fa9e459174562d",
+ "verifier_source_class": "independent",
+ "deployment_mode": "offline",
+ "issuer": "ccs-fixture",
+ "audience": "aer1-crosswalk-verifiers",
+ "nonce": "8aeee718505abcb0392bbbf37735d8e4",
+ "sequence": 1,
+ "issued_at": "2026-11-18T13:00:00Z",
+ "expires_at": "2027-11-18T13:00:00Z",
+ "max_clock_skew": 60,
+ "action": {
+  "type": "read",
+  "resource": "balance:ACC-7788",
+  "side_effects": []
+ },
+ "signing_algorithm": "Ed25519",
+ "public_key_fingerprint": "acda9914178fa44a",
+ "public_key": "j9CyiUZ+sABJHiq3Hh2MWKuFde24+znJtkgDLTUikuI=",
+ "verified_at": "2026-11-18T13:00:00Z",
+ "latency_us": 378,
+ "signature": "6W7El5841WmcBsl7URcJjn42+fJRhp/aEq6nYA6mt4N+YoDXButXpakdhu0LX3Mi8SA1TbS5VgEJQ7K084QLBA=="
+}
